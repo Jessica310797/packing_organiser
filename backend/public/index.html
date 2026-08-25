@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Packing Organiser</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>🧳 Packing Organiser</h1>
+    <p class="subtitle">Software MVP — no camera hardware yet. Upload photos as you pack.</p>
+  </header>
+
+  <main>
+    <section id="trip-picker" class="card">
+      <h2>Trips</h2>
+      <div id="trip-list"></div>
+      <details>
+        <summary>+ New trip</summary>
+        <form id="trip-form">
+          <label>Destination <input name="destination" required placeholder="Lisbon, Portugal" /></label>
+          <label>Start date <input name="startDate" type="date" required /></label>
+          <label>End date <input name="endDate" type="date" required /></label>
+          <label>Activities / occasion <input name="activities" placeholder="beach, hiking, wedding (comma separated)" /></label>
+          <button type="submit">Create trip</button>
+        </form>
+      </details>
+    </section>
+
+    <section id="trip-view" class="card hidden">
+      <div class="trip-header">
+        <div>
+          <h2 id="trip-title"></h2>
+          <p id="trip-meta" class="subtitle"></p>
+        </div>
+        <button id="change-trip" class="link-button">Change trip</button>
+      </div>
+
+      <div class="upload-box">
+        <label class="upload-label">
+          📷 Upload / take a packing photo
+          <input id="photo-input" type="file" accept="image/*" capture="environment" />
+        </label>
+        <div id="upload-status"></div>
+      </div>
+
+      <div id="last-result" class="hidden"></div>
+
+      <div class="grid">
+        <div>
+          <h3>Packed inventory (<span id="inventory-count">0</span>)</h3>
+          <div id="inventory-list"></div>
+          <details>
+            <summary>+ Add item manually</summary>
+            <form id="add-item-form">
+              <input name="name" required placeholder="Item name" />
+              <input name="category" placeholder="Category (optional)" />
+              <input name="quantity" type="number" min="1" value="1" />
+              <button type="submit">Add</button>
+            </form>
+          </details>
+        </div>
+
+        <div>
+          <h3>Needs your review (<span id="review-count">0</span>)</h3>
+          <div id="review-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

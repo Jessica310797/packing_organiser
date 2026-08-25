@@ -11,8 +11,15 @@ twice just because it appears in more than one photo.
 ```bash
 npm install
 cp .env.example .env   # fill in ANTHROPIC_API_KEY
-npm run dev            # starts the API on http://localhost:3000
+npm run dev            # starts the app on http://localhost:3000
 ```
+
+Open **http://localhost:3000** — there's a small built-in web UI (no separate
+frontend project or build step) so you can create a trip, upload/take packing
+photos, and watch the inventory update after each one, live. It also shows a
+"needs your review" queue for anything the reconciler was unsure about, and
+lets you add/edit/remove items manually. This UI is a thin wrapper over the
+API below — the mobile app is the next step, not this.
 
 ```bash
 npm run typecheck
@@ -89,6 +96,7 @@ once the type-level dedup above is validated with real photos.
 
 ## Not built yet
 
-- Any UI (mobile/web) — this MVP is API-only so far.
+- A real mobile app — `public/` is a minimal browser UI for exercising the
+  API locally, not the product's intended interface.
 - Comparing the inventory against trip requirements/recommendations (item 9
   in the brief) — deferred until the inventory itself is trustworthy.
