@@ -8,6 +8,10 @@ model builds up a persistent inventory from them.
 See [`backend/README.md`](backend/README.md) for the API, architecture, and
 how the inventory avoids double-counting items across photos.
 
+See [`mobile/README.md`](mobile/README.md) for the Expo mobile app — the
+actual product interface, run via Expo Go on a phone. `backend/public` is
+also a minimal browser UI for exercising the API without a phone.
+
 ## Setup
 
 ```bash

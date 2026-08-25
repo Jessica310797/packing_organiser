@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { InventoryService } from "./inventory/inventoryService.js";
@@ -12,6 +13,10 @@ export function createApp(visionAnalyzer: VisionAnalyzer, llmMatcher: LLMMatcher
   const service = new InventoryService(visionAnalyzer, llmMatcher);
 
   const app = express();
+  // Open CORS: this is a local-only MVP with no auth/sensitive data, and the
+  // mobile app (Expo web, or a device on another origin) needs to call this
+  // API cross-origin.
+  app.use(cors());
   app.use(express.json());
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
