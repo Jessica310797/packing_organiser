@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { InventoryService } from "../inventory/inventoryService.js";
 import type { SupportedImageMediaType } from "../vision/visionAnalyzer.js";
+import { getTripWeather } from "../weather/weatherService.js";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), "data", "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -146,6 +147,12 @@ export function createTripsRouter(service: InventoryService): Router {
     } catch (err) {
       res.status(404).json({ error: (err as Error).message });
     }
+  });
+
+  router.get("/trips/:tripId/weather", async (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string);
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    res.json(await getTripWeather(trip.destination, trip.startDate));
   });
 
   router.get("/trips/:tripId/photos", (req, res) => {

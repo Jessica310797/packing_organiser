@@ -6,7 +6,7 @@ export function TripCoverImage({
   style,
 }: {
   uri: string | null;
-  style?: { width?: number; height: number; borderRadius?: number };
+  style?: { width?: number | `${number}%`; height: number; borderRadius?: number };
 }) {
   if (uri) {
     return (

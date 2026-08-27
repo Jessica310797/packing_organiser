@@ -1,20 +1,44 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, radius, spacing, textStyles } from "../theme";
+import { useState } from "react";
+import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { getUserName, setUserName } from "../lib/profile";
+import { colors, formStyles, radius, spacing, textStyles } from "../theme";
 
 export default function ProfileScreen() {
+  const [name, setName] = useState("");
+
+  useFocusEffect(() => {
+    getUserName().then((n) => setName(n ?? ""));
+  });
+
+  function handleChange(value: string) {
+    setName(value);
+    setUserName(value).catch(() => {});
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.avatar}>
         <Text style={{ fontSize: 28 }}>🙂</Text>
       </View>
       <Text style={textStyles.title}>Profile</Text>
-      <Text style={styles.body}>Account and settings will live here.</Text>
+
+      <View style={styles.field}>
+        <Text style={textStyles.label}>Your name</Text>
+        <TextInput
+          style={formStyles.input}
+          value={name}
+          onChangeText={handleChange}
+          placeholder="e.g. Jess"
+        />
+        <Text style={styles.hint}>Used for the "Good morning" greeting on the Trips tab.</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", gap: spacing.sm, padding: spacing.lg },
+  container: { flex: 1, backgroundColor: colors.bg, alignItems: "center", padding: spacing.lg, paddingTop: 80, gap: spacing.sm },
   avatar: {
     width: 72,
     height: 72,
@@ -24,5 +48,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: spacing.sm,
   },
-  body: { fontSize: 14, color: colors.muted, textAlign: "center" },
+  field: { width: "100%", marginTop: spacing.lg },
+  hint: { fontSize: 12, color: colors.muted, marginTop: 6 },
 });

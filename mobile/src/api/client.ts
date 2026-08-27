@@ -62,6 +62,14 @@ export const getTrip = (tripId: string) => request<Trip>(`/trips/${tripId}`);
 export const createTrip = (input: CreateTripInput) => request<Trip>("/trips", json("POST", input));
 export const getPhotos = (tripId: string) => request<Photo[]>(`/trips/${tripId}/photos`);
 
+export interface TripWeather {
+  available: boolean;
+  tempC?: number;
+  condition?: string;
+  emoji?: string;
+}
+export const getWeather = (tripId: string) => request<TripWeather>(`/trips/${tripId}/weather`);
+
 // --- inventory -------------------------------------------------------------
 
 export const getInventory = (tripId: string) =>

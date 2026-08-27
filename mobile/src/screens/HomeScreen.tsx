@@ -4,8 +4,9 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { TripsStackParamList } from "../navigation/types";
 import type { Trip } from "../api/types";
-import { apiUrl, getInventory, getPhotos, listTrips } from "../api/client";
+import { apiUrl, getInventory, getPhotos, getWeather, listTrips, type TripWeather } from "../api/client";
 import { formatDateRange, isTripCurrent, isTripPast } from "../lib/dates";
+import { getUserName } from "../lib/profile";
 import { cardShadow, colors, fonts, radius, spacing, textStyles } from "../theme";
 import { TripCoverImage } from "../components/TripCoverImage";
 
@@ -15,6 +16,7 @@ interface TripWithMeta {
   trip: Trip;
   coverUrl: string | null;
   itemCount: number;
+  weather: TripWeather;
 }
 
 function greeting(): string {
@@ -27,16 +29,24 @@ function greeting(): string {
 export default function HomeScreen({ navigation }: Props) {
   const [current, setCurrent] = useState<TripWithMeta[] | null>(null);
   const [past, setPast] = useState<TripWithMeta[]>([]);
+  const [name, setName] = useState<string | null>(null);
 
   const load = useCallback(() => {
+    getUserName().then(setName);
     listTrips().then(async (trips) => {
       const withMeta = await Promise.all(
         trips.map(async (trip): Promise<TripWithMeta> => {
-          const [photos, inventory] = await Promise.all([
+          const [photos, inventory, weather] = await Promise.all([
             getPhotos(trip.id).catch(() => []),
             getInventory(trip.id).catch(() => []),
+            getWeather(trip.id).catch((): TripWeather => ({ available: false })),
           ]);
-          return { trip, coverUrl: photos[0] ? apiUrl(photos[0].url) : null, itemCount: inventory.length };
+          return {
+            trip,
+            coverUrl: photos[0] ? apiUrl(photos[0].url) : null,
+            itemCount: inventory.length,
+            weather,
+          };
         }),
       );
       setCurrent(withMeta.filter((t) => isTripCurrent(t.trip.endDate)));
@@ -54,15 +64,19 @@ export default function HomeScreen({ navigation }: Props) {
     <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={textStyles.wordmark}>PAKKA</Text>
-        <View style={styles.avatar}>
+        <Pressable
+          style={styles.avatar}
+          onPress={() => navigation.getParent()?.navigate("ProfileTab" as never)}
+        >
           <Text style={{ fontSize: 18 }}>🙂</Text>
-        </View>
+        </Pressable>
       </View>
 
-      <Text style={textStyles.greeting}>{greeting()}</Text>
+      <Text style={textStyles.greeting}>{greeting()}{name ? `, ${name}` : ""}</Text>
       <Text style={styles.subtitle}>Where are we off to next?</Text>
 
       <Pressable style={styles.planCard} onPress={() => navigation.navigate("NewTrip")}>
+        <Text style={styles.planCardDecoration}>┄┄┄┄✈️</Text>
         <View style={styles.planIcon}>
           <Text style={{ fontSize: 22 }}>🧳</Text>
         </View>
@@ -81,16 +95,25 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.empty}>No upcoming trips yet -- plan one above.</Text>
       )}
       <View style={{ gap: spacing.md }}>
-        {(current ?? []).map(({ trip, coverUrl, itemCount }) => (
+        {(current ?? []).map(({ trip, coverUrl, itemCount, weather }) => (
           <Pressable key={trip.id} style={styles.currentCard} onPress={() => openTrip(trip)}>
-            <TripCoverImage uri={coverUrl} style={{ width: 96, height: 96 }} />
-            <View style={{ flex: 1, gap: 2 }}>
+            <View>
+              <TripCoverImage uri={coverUrl} style={{ width: "100%", height: 140, borderRadius: 0 }} />
+              <View style={styles.badge}>
+                <Text style={styles.badgeLabel}>
+                  {itemCount} item{itemCount === 1 ? "" : "s"}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.currentCardBody}>
               <Text style={textStyles.cardTitle}>{trip.destination}</Text>
-              <Text style={styles.meta}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
               {trip.purpose.length > 0 && <Text style={styles.purpose}>{trip.purpose}</Text>}
-              <Text style={styles.itemCount}>
-                {itemCount} item{itemCount === 1 ? "" : "s"} packed
-              </Text>
+              <Text style={styles.meta}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
+              {weather.available && (
+                <Text style={styles.weather}>
+                  {weather.emoji} {weather.tempC}°C {weather.condition}
+                </Text>
+              )}
             </View>
           </Pressable>
         ))}
@@ -137,7 +160,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
+    overflow: "hidden",
     ...cardShadow,
+  },
+  planCardDecoration: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    fontSize: 13,
+    color: colors.border,
+    letterSpacing: 1,
   },
   planIcon: {
     width: 52,
@@ -159,14 +191,24 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: spacing.sm, marginBottom: spacing.sm },
   empty: { color: colors.muted, fontSize: 14, marginBottom: spacing.md },
   currentCard: {
-    flexDirection: "row",
-    gap: spacing.md,
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    padding: spacing.sm,
+    overflow: "hidden",
     ...cardShadow,
   },
+  currentCardBody: { padding: spacing.md, gap: 2 },
+  badge: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: "rgba(28,27,25,0.75)",
+    borderRadius: radius.pill,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  badgeLabel: { color: "#fff", fontSize: 11.5, fontWeight: "700" },
   meta: { fontSize: 12.5, color: colors.muted },
+  weather: { fontSize: 12.5, color: colors.ink, marginTop: 2 },
   purpose: {
     fontSize: 11,
     fontWeight: "700",
@@ -174,7 +216,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.3,
   },
-  itemCount: { fontSize: 12.5, color: colors.muted, marginTop: 2 },
   pastCard: { width: 140, marginBottom: spacing.md },
   pastLabel: { fontFamily: fonts.serifSemiBold, fontSize: 14, color: colors.ink, marginTop: 6 },
   pastMeta: { fontSize: 11.5, color: colors.muted },

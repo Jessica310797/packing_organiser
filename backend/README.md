@@ -90,6 +90,7 @@ once the type-level dedup above is validated with real photos.
 | `POST /trips/:id/photos` | Upload a packing photo (`multipart/form-data`, field `photo`) — runs vision detection + reconciliation, returns the updated inventory and match/add/ambiguous counts |
 | `GET /trips/:id/photos` | List a trip's uploaded photos (each with a `url` to fetch the file) |
 | `GET /trips/:id/photos/:photoId/file` | The raw photo file (used e.g. as a trip cover thumbnail) |
+| `GET /trips/:id/weather` | Best-effort forecast for the trip's start date: `{available: true, tempC, condition, emoji}` or `{available: false}` |
 | `GET /trips/:id/inventory` | Current active inventory |
 | `POST /trips/:id/inventory` | Manually add an item |
 | `PATCH /trips/:id/inventory/:itemId` | Manually correct an item (name/category/quantity) |
@@ -98,6 +99,17 @@ once the type-level dedup above is validated with real photos.
 | `POST /review/:candidateId/resolve` | Resolve one: `{action: "confirm_match", itemId}` \| `{action: "confirm_new"}` \| `{action: "discard"}` |
 | `GET /wardrobe` / `POST /wardrobe` | List / manually add to the user's general wardrobe (independent of any trip) |
 | `PATCH /wardrobe/:itemId` / `DELETE /wardrobe/:itemId` | Correct / remove a wardrobe item |
+
+## Weather
+
+Uses [Open-Meteo](https://open-meteo.com) (`src/weather/`) — free, no API key
+or signup required. Geocodes the trip's destination, then fetches a forecast
+for its start date. Open-Meteo's free forecast only covers roughly the next
+16 days, so most trips booked further ahead will just get
+`{available: false}` — there's no fallback to historical/climate averages
+for longer horizons yet. Business logic (`weatherService.ts`) is unit-tested
+against a mocked client (`test/weatherService.test.ts`); the actual network
+calls (`openMeteoClient.ts`) obviously need real internet access to verify.
 
 ## Wardrobe
 
