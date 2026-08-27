@@ -1,31 +1,75 @@
 import { StatusBar } from "expo-status-bar";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "./src/navigation/types";
-import TripsScreen from "./src/screens/TripsScreen";
-import NewTripScreen from "./src/screens/NewTripScreen";
-import TripDetailScreen from "./src/screens/TripDetailScreen";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import {
+  useFonts,
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_600SemiBold,
+  PlayfairDisplay_700Bold,
+} from "@expo-google-fonts/playfair-display";
+import type { RootTabParamList } from "./src/navigation/types";
+import { TripsStack } from "./src/navigation/TripsStack";
+import { PackStack } from "./src/navigation/PackStack";
+import WardrobeScreen from "./src/screens/WardrobeScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
 import { colors } from "./src/theme";
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<RootTabParamList>();
+
+const TAB_ICONS: Record<keyof RootTabParamList, string> = {
+  TripsTab: "🧳",
+  WardrobeTab: "👕",
+  PackTab: "🎒",
+  ProfileTab: "👤",
+};
+
+const TAB_LABELS: Record<keyof RootTabParamList, string> = {
+  TripsTab: "Trips",
+  WardrobeTab: "Wardrobe",
+  PackTab: "Pack",
+  ProfileTab: "Profile",
+};
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_400Regular,
+    PlayfairDisplay_600SemiBold,
+    PlayfairDisplay_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.ink} />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.card },
-          headerShadowVisible: false,
-          headerTitleStyle: { fontWeight: "700", color: colors.ink },
-          headerTintColor: colors.accent,
-          contentStyle: { backgroundColor: colors.bg },
-        }}
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarActiveTintColor: colors.ink,
+          tabBarInactiveTintColor: colors.mutedLight,
+          tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+          tabBarLabel: TAB_LABELS[route.name as keyof RootTabParamList],
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 20, color }}>{TAB_ICONS[route.name as keyof RootTabParamList]}</Text>
+          ),
+        })}
       >
-        <Stack.Screen name="Trips" component={TripsScreen} options={{ title: "🧳 Packing Organiser" }} />
-        <Stack.Screen name="NewTrip" component={NewTripScreen} options={{ title: "New Trip" }} />
-        <Stack.Screen name="TripDetail" component={TripDetailScreen} />
-      </Stack.Navigator>
-      <StatusBar style="auto" />
+        <Tab.Screen name="TripsTab" component={TripsStack} />
+        <Tab.Screen name="WardrobeTab" component={WardrobeScreen} />
+        <Tab.Screen name="PackTab" component={PackStack} />
+        <Tab.Screen name="ProfileTab" component={ProfileScreen} />
+      </Tab.Navigator>
+      <StatusBar style="dark" />
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
+});

@@ -59,13 +59,26 @@ your own custom dev client instead of Expo Go.
 
 ## What's here
 
-- `App.tsx` — navigation stack (Trips list → New trip → Trip detail)
+- `App.tsx` — bottom tab navigator: **Trips** (dashboard → new trip → trip
+  detail), **Wardrobe** (a general, trip-independent closet you can log
+  purchases into), **Pack** (jump straight into packing a trip in
+  progress), **Profile** (placeholder)
+- `src/theme.ts` — the design tokens (cream background, serif display font
+  loaded via `@expo-google-fonts/playfair-display`, black pill buttons) used
+  across every screen
 - `src/api/client.ts` — typed client for the backend's REST API
-- `src/screens/` — the three screens
-- `src/components/` — inventory row, review-queue row, shared button
+- `src/screens/` — one per tab/step; `HomeScreen` is the main dashboard
+- `src/components/` — shared UI: inventory/wardrobe/review rows, pickers,
+  trip cover image
 
 Camera and photo-library permissions are requested at the point you tap
 **Take photo** / **Choose photo**, not on launch.
+
+The Home dashboard's "items packed" count is real, but there's no fake
+packing-progress percentage or weather — those would need a trip
+requirements/target feature and a weather API respectively, neither of
+which exist yet. A trip's cover thumbnail is its own first uploaded packing
+photo when one exists, not stock photography.
 
 ## Known gap
 

@@ -50,6 +50,7 @@ function photoFromRow(row: PhotoRow): Photo {
     id: row.id,
     tripId: row.trip_id,
     filePath: row.file_path,
+    url: `/trips/${row.trip_id}/photos/${row.id}/file`,
     sequenceNumber: row.sequence_number,
     status: row.status,
     createdAt: row.created_at,
@@ -158,10 +159,12 @@ export function createPhoto(tripId: string, filePath: string): Photo {
     .prepare(`SELECT COUNT(*) as count FROM photos WHERE trip_id = ?`)
     .get(tripId) as { count: number };
 
+  const id = randomUUID();
   const photo: Photo = {
-    id: randomUUID(),
+    id,
     tripId,
     filePath,
+    url: `/trips/${tripId}/photos/${id}/file`,
     sequenceNumber: count + 1,
     status: "pending",
     createdAt: new Date().toISOString(),
@@ -180,6 +183,13 @@ export function setPhotoStatus(id: string, status: Photo["status"]): void {
 export function getPhoto(id: string): Photo | undefined {
   const row = db.prepare(`SELECT * FROM photos WHERE id = ?`).get(id) as PhotoRow | undefined;
   return row ? photoFromRow(row) : undefined;
+}
+
+export function listPhotos(tripId: string): Photo[] {
+  const rows = db
+    .prepare(`SELECT * FROM photos WHERE trip_id = ? ORDER BY sequence_number ASC`)
+    .all(tripId) as PhotoRow[];
+  return rows.map(photoFromRow);
 }
 
 // --- inventory items -------------------------------------------------------

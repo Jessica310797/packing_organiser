@@ -40,6 +40,14 @@ export class InventoryService {
     return repo.listActiveItems(tripId);
   }
 
+  getPhotos(tripId: string): Photo[] {
+    return repo.listPhotos(tripId);
+  }
+
+  getPhoto(photoId: string): Photo | undefined {
+    return repo.getPhoto(photoId);
+  }
+
   getPendingReview(tripId: string): ReviewCandidate[] {
     return repo.listPendingReviewCandidates(tripId);
   }

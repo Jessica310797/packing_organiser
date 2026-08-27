@@ -2,15 +2,20 @@ import { Platform } from "react-native";
 import type {
   IngestPhotoResult,
   InventoryItem,
+  Photo,
   ReviewCandidate,
   ReviewResolution,
   Trip,
+  WardrobeItem,
 } from "./types";
 
 // Set with a `.env` file (see `.env.example`) — must point at wherever the
 // backend is reachable from your phone, not "localhost" (that means the
 // phone itself when the app is running on a device).
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
+
+/** Turns a relative API path (e.g. a Photo's `url`) into a fetchable absolute URL. */
+export const apiUrl = (relativePath: string) => `${API_BASE_URL}${relativePath}`;
 
 class ApiError extends Error {
   constructor(message: string, public status: number) {
@@ -55,6 +60,7 @@ export interface CreateTripInput {
 export const listTrips = () => request<Trip[]>("/trips");
 export const getTrip = (tripId: string) => request<Trip>(`/trips/${tripId}`);
 export const createTrip = (input: CreateTripInput) => request<Trip>("/trips", json("POST", input));
+export const getPhotos = (tripId: string) => request<Photo[]>(`/trips/${tripId}/photos`);
 
 // --- inventory -------------------------------------------------------------
 
@@ -120,3 +126,18 @@ export async function uploadPhoto(tripId: string, photo: PickedPhoto): Promise<I
     body: form,
   });
 }
+
+// --- wardrobe (global closet, independent of any one trip) -------------
+
+export const getWardrobe = () => request<WardrobeItem[]>("/wardrobe");
+
+export const addWardrobeItem = (input: AddItemInput) =>
+  request<WardrobeItem>("/wardrobe", json("POST", input));
+
+export const editWardrobeItem = (
+  itemId: string,
+  patch: Partial<{ name: string; category: string | null; quantity: number }>,
+) => request<WardrobeItem>(`/wardrobe/${itemId}`, json("PATCH", patch));
+
+export const removeWardrobeItem = (itemId: string) =>
+  request<void>(`/wardrobe/${itemId}`, { method: "DELETE" });

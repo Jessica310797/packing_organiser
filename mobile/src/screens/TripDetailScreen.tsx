@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { ParamListBase } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import type { RootStackParamList } from "../navigation/types";
+import type { TripDetailParams } from "../navigation/types";
 import type { IngestPhotoResult, InventoryItem, ReviewCandidate } from "../api/types";
 import {
   addManualItem,
@@ -19,7 +20,14 @@ import { InventoryRow } from "../components/InventoryRow";
 import { ReviewRow } from "../components/ReviewRow";
 import { PrimaryButton } from "../components/PrimaryButton";
 
-type Props = NativeStackScreenProps<RootStackParamList, "TripDetail">;
+// Reachable from both the Trips tab's stack and the Pack tab's stack, so
+// this is typed loosely against a generic navigator rather than one
+// specific stack's full param list (this screen never navigates onward
+// itself -- only setOptions -- so nothing is lost).
+type Props = {
+  route: { key: string; name: string; params: TripDetailParams };
+  navigation: NativeStackNavigationProp<ParamListBase>;
+};
 
 export default function TripDetailScreen({ route, navigation }: Props) {
   const { tripId, destination } = route.params;

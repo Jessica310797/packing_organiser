@@ -148,6 +148,22 @@ export function createTripsRouter(service: InventoryService): Router {
     }
   });
 
+  router.get("/trips/:tripId/photos", (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string);
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    res.json(service.getPhotos(trip.id));
+  });
+
+  router.get("/trips/:tripId/photos/:photoId/file", (req, res) => {
+    const photo = service.getPhoto(req.params.photoId as string);
+    if (!photo || photo.tripId !== req.params.tripId) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+    res.sendFile(path.resolve(photo.filePath), (err) => {
+      if (err && !res.headersSent) res.status(404).json({ error: "Photo file not found" });
+    });
+  });
+
   router.post("/trips/:tripId/photos", upload.single("photo"), async (req, res) => {
     const trip = service.getTrip(req.params.tripId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });

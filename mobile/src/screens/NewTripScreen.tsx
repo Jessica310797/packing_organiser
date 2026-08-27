@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/types";
+import type { TripsStackParamList } from "../navigation/types";
 import { createTrip } from "../api/client";
 import { formStyles, spacing, textStyles } from "../theme";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -10,7 +10,7 @@ import { TripPurposeSelect } from "../components/TripPurposeSelect";
 import { ActivitiesMultiSelect } from "../components/ActivitiesMultiSelect";
 import { TripDateRangePicker } from "../components/TripDateRangePicker";
 
-type Props = NativeStackScreenProps<RootStackParamList, "NewTrip">;
+type Props = NativeStackScreenProps<TripsStackParamList, "NewTrip">;
 
 export default function NewTripScreen({ navigation }: Props) {
   const [destination, setDestination] = useState("");

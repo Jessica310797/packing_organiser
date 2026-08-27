@@ -42,9 +42,21 @@ export interface Photo {
   id: string;
   tripId: string;
   filePath: string;
+  url: string;
   sequenceNumber: number;
   status: "pending" | "processed" | "failed";
   createdAt: string;
+}
+
+export interface WardrobeItem {
+  id: string;
+  name: string;
+  normalizedName: string;
+  category: string | null;
+  quantity: number;
+  status: ItemStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IngestPhotoResult {

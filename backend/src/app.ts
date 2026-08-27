@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { InventoryService } from "./inventory/inventoryService.js";
 import { createTripsRouter } from "./routes/trips.js";
+import { createWardrobeRouter } from "./routes/wardrobe.js";
 import type { VisionAnalyzer } from "./vision/visionAnalyzer.js";
 import type { LLMMatcher } from "./inventory/reconciler.js";
 
@@ -21,6 +22,7 @@ export function createApp(visionAnalyzer: VisionAnalyzer, llmMatcher: LLMMatcher
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
   app.use(createTripsRouter(service));
+  app.use(createWardrobeRouter());
   app.use(express.static(PUBLIC_DIR));
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

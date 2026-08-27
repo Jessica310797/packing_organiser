@@ -72,6 +72,20 @@ db.exec(`
     status TEXT NOT NULL DEFAULT 'pending',
     created_at TEXT NOT NULL
   );
+
+  -- A user's general closet, independent of any one trip: what they own,
+  -- manually maintained for now. Future work: seed packing recommendations
+  -- for new trips from this.
+  CREATE TABLE IF NOT EXISTS wardrobe_items (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    normalized_name TEXT NOT NULL,
+    category TEXT,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 // Lightweight migration for databases created before `purpose` existed.

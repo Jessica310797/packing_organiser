@@ -13,6 +13,8 @@ export interface Photo {
   id: string;
   tripId: string;
   filePath: string;
+  /** Relative API path the client can fetch to display this photo, e.g. as a trip cover thumbnail. */
+  url: string;
   sequenceNumber: number;
   status: "pending" | "processed" | "failed";
   createdAt: string;
@@ -62,4 +64,16 @@ export interface ReconciliationResult {
   matched: { detection: DetectedItem; itemId: string; method: MatchMethod }[];
   added: { detection: DetectedItem; itemId: string }[];
   ambiguous: { detection: DetectedItem; candidateItemIds: string[] }[];
+}
+
+/** An item in the user's general closet, independent of any one trip. */
+export interface WardrobeItem {
+  id: string;
+  name: string;
+  normalizedName: string;
+  category: string | null;
+  quantity: number;
+  status: ItemStatus;
+  createdAt: string;
+  updatedAt: string;
 }

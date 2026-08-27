@@ -2,33 +2,12 @@ import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Calendar, type DateData } from "react-native-calendars";
 import { colors, formStyles, radius, spacing } from "../theme";
+import { formatDate, formatDateRange as formatRange } from "../lib/dates";
 
 type MarkedDates = Record<
   string,
   { startingDay?: boolean; endingDay?: boolean; color?: string; textColor?: string }
 >;
-
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return `${d} ${MONTHS[(m ?? 1) - 1]} ${y}`;
-}
-
-function formatRange(start: string, end: string): string {
-  if (!start) return "";
-  if (!end || end === start) return formatDate(start);
-  const startYear = start.split("-")[0];
-  const endYear = end.split("-")[0];
-  if (startYear === endYear) {
-    const [, m, d] = start.split("-").map(Number);
-    const [ye, me, de] = end.split("-").map(Number);
-    return `${d} ${MONTHS[(m ?? 1) - 1]} – ${de} ${MONTHS[(me ?? 1) - 1]} ${ye}`;
-  }
-  return `${formatDate(start)} – ${formatDate(end)}`;
-}
 
 function buildMarkedDates(start: string, end: string): MarkedDates {
   if (!start) return {};
