@@ -56,14 +56,18 @@ export default function HomeScreen({ navigation }: Props) {
   const [current, setCurrent] = useState<TripWithMeta[] | null>(null);
   const [past, setPast] = useState<TripWithMeta[]>([]);
   const [name, setName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
+    setError(null);
     getUserName().then(setName);
-    listTrips().then(async (trips) => {
-      const withMeta = await Promise.all(trips.map(loadTripMeta));
-      setCurrent(withMeta.filter((t) => isTripCurrent(t.trip.endDate)));
-      setPast(withMeta.filter((t) => isTripPast(t.trip.endDate)).reverse());
-    });
+    listTrips()
+      .then(async (trips) => {
+        const withMeta = await Promise.all(trips.map(loadTripMeta));
+        setCurrent(withMeta.filter((t) => isTripCurrent(t.trip.endDate)));
+        setPast(withMeta.filter((t) => isTripPast(t.trip.endDate)).reverse());
+      })
+      .catch((err) => setError((err as Error).message || "Couldn't reach the server."));
   }, []);
 
   useFocusEffect(load);
@@ -95,8 +99,16 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={textStyles.sectionTitle}>Current trips</Text>
         <Text style={styles.seeAll}>See all ›</Text>
       </View>
-      {current === null && <ActivityIndicator color={colors.ink} style={{ marginTop: spacing.md }} />}
-      {current !== null && current.length === 0 && (
+      {error && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>Couldn't load trips: {error}</Text>
+          <Pressable onPress={load}>
+            <Text style={styles.retryLink}>Try again</Text>
+          </Pressable>
+        </View>
+      )}
+      {!error && current === null && <ActivityIndicator color={colors.ink} style={{ marginTop: spacing.md }} />}
+      {!error && current !== null && current.length === 0 && (
         <Text style={styles.empty}>No upcoming trips yet -- plan one above.</Text>
       )}
       <View style={{ gap: spacing.md }}>
@@ -161,4 +173,13 @@ const styles = StyleSheet.create({
   },
   seeAll: { ...textStyles.body, fontSize: 15 },
   empty: { ...textStyles.muted, marginBottom: spacing.md },
+  errorBox: {
+    backgroundColor: colors.beigeBadge,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: 6,
+  },
+  errorText: { ...textStyles.body, color: colors.beigeDark },
+  retryLink: { ...textStyles.body, color: colors.ink, fontWeight: "600" as const },
 });
