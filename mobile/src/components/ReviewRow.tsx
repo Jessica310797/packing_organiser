@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { InventoryItem, ReviewCandidate } from "../api/types";
-import { colors, formStyles, textStyles } from "../theme";
+import { colors, formStyles, radius, textStyles } from "../theme";
 
 export function ReviewRow({
   candidate,
@@ -45,10 +45,8 @@ export function ReviewRow({
 const styles = StyleSheet.create({
   row: {
     backgroundColor: colors.warnBg,
-    borderWidth: 1,
-    borderColor: "#f0d9a8",
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: radius.md,
+    padding: 14,
   },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
 });

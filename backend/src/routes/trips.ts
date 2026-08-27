@@ -37,6 +37,7 @@ const upload = multer({
 
 const createTripSchema = z.object({
   destination: z.string().trim().min(1),
+  purpose: z.string().trim().min(1),
   startDate: z.string().trim().min(1),
   endDate: z.string().trim().min(1),
   durationDays: z.number().int().positive(),

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { InventoryItem } from "../api/types";
-import { colors, textStyles } from "../theme";
+import { cardShadow, colors, radius, textStyles } from "../theme";
 
 export function InventoryRow({
   item,
@@ -39,26 +39,26 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    gap: 8,
+    padding: 12,
+    borderRadius: radius.md,
     backgroundColor: colors.card,
+    ...cardShadow,
   },
   qty: {
-    backgroundColor: "#eee",
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    backgroundColor: colors.bg,
+    borderRadius: radius.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     fontSize: 12,
     fontWeight: "700",
+    color: colors.ink,
   },
   smallBtn: {
     width: 30,
     height: 30,
-    borderRadius: 6,
-    backgroundColor: "#f1f1ef",
+    borderRadius: radius.pill,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
   },

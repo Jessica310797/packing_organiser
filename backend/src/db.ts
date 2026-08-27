@@ -14,6 +14,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS trips (
     id TEXT PRIMARY KEY,
     destination TEXT NOT NULL,
+    purpose TEXT NOT NULL DEFAULT '',
     start_date TEXT NOT NULL,
     end_date TEXT NOT NULL,
     duration_days INTEGER NOT NULL,
@@ -72,3 +73,9 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 `);
+
+// Lightweight migration for databases created before `purpose` existed.
+const tripColumns = db.prepare("PRAGMA table_info(trips)").all() as { name: string }[];
+if (!tripColumns.some((c) => c.name === "purpose")) {
+  db.exec("ALTER TABLE trips ADD COLUMN purpose TEXT NOT NULL DEFAULT ''");
+}

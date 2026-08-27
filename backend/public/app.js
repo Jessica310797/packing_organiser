@@ -33,6 +33,7 @@ async function loadTrips() {
     el.innerHTML = `
       <div>
         <div class="name">${escapeHtml(trip.destination)}</div>
+        ${trip.purpose ? `<div class="purpose-tag">${escapeHtml(trip.purpose)}</div>` : ""}
         <div class="meta">${trip.startDate} → ${trip.endDate} · ${trip.durationDays} day(s)</div>
       </div>
       <span>→</span>`;
@@ -41,20 +42,31 @@ async function loadTrips() {
   }
 }
 
+$('select[name="purpose"]').addEventListener("change", (e) => {
+  $("#purpose-other-label").classList.toggle("hidden", e.target.value !== "__other");
+});
+
 $("#trip-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = new FormData(e.target);
   const destination = form.get("destination");
+  const purposeSelected = form.get("purpose");
+  const purpose = purposeSelected === "__other" ? String(form.get("purposeOther") || "").trim() : purposeSelected;
   const startDate = form.get("startDate");
   const endDate = form.get("endDate");
   const durationDays = Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / 86_400_000) + 1);
-  const activities = String(form.get("activities") || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const activities = form.getAll("activity");
+  const activityOther = String(form.get("activityOther") || "").trim();
+  if (activityOther) activities.push(activityOther);
 
-  const trip = await api("POST", "/trips", { destination, startDate, endDate, durationDays, activities });
+  if (!purpose) {
+    alert("Please select (or describe) a trip purpose.");
+    return;
+  }
+
+  const trip = await api("POST", "/trips", { destination, purpose, startDate, endDate, durationDays, activities });
   e.target.reset();
+  $("#purpose-other-label").classList.add("hidden");
   await loadTrips();
   selectTrip(trip.id);
 });
@@ -68,6 +80,7 @@ async function selectTrip(tripId) {
   $("#trip-view").classList.remove("hidden");
   $("#trip-title").textContent = trip.destination;
   $("#trip-meta").textContent =
+    (trip.purpose ? `${trip.purpose} · ` : "") +
     `${trip.startDate} → ${trip.endDate} · ${trip.durationDays} day(s)` +
     (trip.activities.length ? ` · ${trip.activities.join(", ")}` : "");
   $("#last-result").classList.add("hidden");

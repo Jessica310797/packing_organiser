@@ -66,13 +66,48 @@ form label {
 input, button {
   font: inherit;
 }
-input {
+input, select {
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fff;
 }
 #add-item-form input { flex: 1 1 120px; }
+
+.activities-fieldset {
+  flex: 1 1 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px 14px;
+}
+.activities-fieldset legend {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 4px;
+}
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px 12px;
+}
+.checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+.checkbox-label input { width: auto; }
+.activity-other-input { width: 100%; margin-top: 10px; }
+.purpose-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
 
 button {
   padding: 8px 16px;

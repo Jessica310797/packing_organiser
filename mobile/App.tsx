@@ -15,12 +15,14 @@ export default function App() {
       <Stack.Navigator
         screenOptions={{
           headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.ink,
+          headerShadowVisible: false,
+          headerTitleStyle: { fontWeight: "700", color: colors.ink },
+          headerTintColor: colors.accent,
           contentStyle: { backgroundColor: colors.bg },
         }}
       >
         <Stack.Screen name="Trips" component={TripsScreen} options={{ title: "🧳 Packing Organiser" }} />
-        <Stack.Screen name="NewTrip" component={NewTripScreen} options={{ title: "New trip" }} />
+        <Stack.Screen name="NewTrip" component={NewTripScreen} options={{ title: "New Trip" }} />
         <Stack.Screen name="TripDetail" component={TripDetailScreen} />
       </Stack.Navigator>
       <StatusBar style="auto" />

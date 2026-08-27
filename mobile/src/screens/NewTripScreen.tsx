@@ -1,26 +1,28 @@
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { createTrip } from "../api/client";
 import { formStyles, spacing, textStyles } from "../theme";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { CityAutocomplete } from "../components/CityAutocomplete";
+import { TripPurposeSelect } from "../components/TripPurposeSelect";
+import { ActivitiesMultiSelect } from "../components/ActivitiesMultiSelect";
+import { TripDateRangePicker } from "../components/TripDateRangePicker";
 
 type Props = NativeStackScreenProps<RootStackParamList, "NewTrip">;
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
 export default function NewTripScreen({ navigation }: Props) {
   const [destination, setDestination] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [activities, setActivities] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [activities, setActivities] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    if (!destination.trim() || !DATE_RE.test(startDate) || !DATE_RE.test(endDate)) {
-      Alert.alert("Missing info", "Please fill in a destination and both dates as YYYY-MM-DD.");
+    if (!destination.trim() || !purpose.trim() || !startDate || !endDate) {
+      Alert.alert("Missing info", "Please fill in a destination, trip purpose, and trip dates.");
       return;
     }
     const durationDays = Math.max(
@@ -32,13 +34,11 @@ export default function NewTripScreen({ navigation }: Props) {
     try {
       const trip = await createTrip({
         destination: destination.trim(),
+        purpose: purpose.trim(),
         startDate,
         endDate,
         durationDays,
-        activities: activities
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        activities,
       });
       navigation.replace("TripDetail", { tripId: trip.id, destination: trip.destination });
     } catch (err) {
@@ -54,35 +54,25 @@ export default function NewTripScreen({ navigation }: Props) {
         <Text style={textStyles.label}>Destination</Text>
         <CityAutocomplete value={destination} onChangeText={setDestination} placeholder="Lisbon, Portugal" />
       </View>
+
       <View style={formStyles.field}>
-        <Text style={textStyles.label}>Start date (YYYY-MM-DD)</Text>
-        <TextInput
-          style={formStyles.input}
-          value={startDate}
-          onChangeText={setStartDate}
-          placeholder="2026-09-10"
-          keyboardType="numbers-and-punctuation"
-        />
+        <Text style={textStyles.label}>Trip Purpose</Text>
+        <TripPurposeSelect value={purpose} onChange={setPurpose} />
       </View>
+
       <View style={formStyles.field}>
-        <Text style={textStyles.label}>End date (YYYY-MM-DD)</Text>
-        <TextInput
-          style={formStyles.input}
-          value={endDate}
-          onChangeText={setEndDate}
-          placeholder="2026-09-15"
-          keyboardType="numbers-and-punctuation"
-        />
+        <Text style={textStyles.label}>Activities</Text>
+        <ActivitiesMultiSelect value={activities} onChange={setActivities} />
       </View>
+
       <View style={formStyles.field}>
-        <Text style={textStyles.label}>Activities / occasion</Text>
-        <TextInput
-          style={formStyles.input}
-          value={activities}
-          onChangeText={setActivities}
-          placeholder="beach, hiking, wedding"
-        />
+        <Text style={textStyles.label}>Trip Dates</Text>
+        <TripDateRangePicker startDate={startDate} endDate={endDate} onChange={(s, e) => {
+          setStartDate(s);
+          setEndDate(e);
+        }} />
       </View>
+
       <PrimaryButton label="Create trip" onPress={submit} loading={submitting} />
     </ScrollView>
   );

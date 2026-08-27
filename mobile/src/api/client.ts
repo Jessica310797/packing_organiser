@@ -45,6 +45,7 @@ function json(method: string, body?: unknown): RequestInit {
 
 export interface CreateTripInput {
   destination: string;
+  purpose: string;
   startDate: string;
   endDate: string;
   durationDays: number;

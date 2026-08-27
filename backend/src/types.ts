@@ -1,10 +1,11 @@
 export interface Trip {
   id: string;
   destination: string;
+  purpose: string; // e.g. "Wedding (Guest)", "Work Trip" -- the higher-level reason for the trip
   startDate: string; // ISO date, e.g. "2026-09-10"
   endDate: string; // ISO date
   durationDays: number;
-  activities: string[];
+  activities: string[]; // specific planned activities, e.g. "hiking", "swimming"
   createdAt: string;
 }
 

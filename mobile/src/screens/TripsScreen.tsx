@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import type { Trip } from "../api/types";
 import { listTrips } from "../api/client";
-import { colors, spacing, textStyles } from "../theme";
+import { cardShadow, colors, radius, spacing, textStyles } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Trips">;
 
@@ -25,25 +25,26 @@ export default function TripsScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       {error && <Text style={styles.error}>{error}</Text>}
-      {!trips && !error && <ActivityIndicator style={{ marginTop: spacing.lg }} />}
+      {!trips && !error && <ActivityIndicator style={{ marginTop: spacing.lg }} color={colors.accent} />}
       {trips && trips.length === 0 && (
         <Text style={styles.empty}>No trips yet — create one to get started.</Text>
       )}
       <FlatList
         data={trips ?? []}
         keyExtractor={(trip) => trip.id}
-        contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}
+        contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
         renderItem={({ item }) => (
           <Pressable
             style={styles.card}
             onPress={() => navigation.navigate("TripDetail", { tripId: item.id, destination: item.destination })}
           >
-            <Text style={textStyles.cardTitle}>{item.destination}</Text>
-            <Text style={textStyles.muted}>
+            <Text style={textStyles.title}>{item.destination}</Text>
+            {item.purpose.length > 0 && <Text style={styles.purpose}>{item.purpose}</Text>}
+            <Text style={styles.meta}>
               {item.startDate} → {item.endDate} · {item.durationDays} day(s)
             </Text>
             {item.activities.length > 0 && (
-              <Text style={textStyles.muted}>{item.activities.join(", ")}</Text>
+              <Text style={styles.meta}>{item.activities.join(" · ")}</Text>
             )}
           </Pressable>
         )}
@@ -59,12 +60,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: radius.md,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 2,
+    gap: 4,
+    ...cardShadow,
   },
+  purpose: {
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: colors.accent,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  meta: { fontSize: 13, color: colors.muted },
   empty: { textAlign: "center", marginTop: spacing.lg, color: colors.muted },
   error: { color: colors.danger, padding: spacing.md },
   fab: {
@@ -72,14 +80,14 @@ const styles = StyleSheet.create({
     right: spacing.md,
     bottom: spacing.md,
     backgroundColor: colors.accent,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    borderRadius: radius.pill,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  fabLabel: { color: "#fff", fontWeight: "700" },
+  fabLabel: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

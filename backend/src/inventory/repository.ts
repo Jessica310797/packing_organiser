@@ -15,6 +15,7 @@ import type {
 interface TripRow {
   id: string;
   destination: string;
+  purpose: string;
   start_date: string;
   end_date: string;
   duration_days: number;
@@ -26,6 +27,7 @@ function tripFromRow(row: TripRow): Trip {
   return {
     id: row.id,
     destination: row.destination,
+    purpose: row.purpose,
     startDate: row.start_date,
     endDate: row.end_date,
     durationDays: row.duration_days,
@@ -114,6 +116,7 @@ function reviewCandidateFromRow(row: ReviewCandidateRow): ReviewCandidate {
 
 export interface CreateTripInput {
   destination: string;
+  purpose: string;
   startDate: string;
   endDate: string;
   durationDays: number;
@@ -124,6 +127,7 @@ export function createTrip(input: CreateTripInput): Trip {
   const trip: Trip = {
     id: randomUUID(),
     destination: input.destination,
+    purpose: input.purpose,
     startDate: input.startDate,
     endDate: input.endDate,
     durationDays: input.durationDays,
@@ -131,8 +135,8 @@ export function createTrip(input: CreateTripInput): Trip {
     createdAt: new Date().toISOString(),
   };
   db.prepare(
-    `INSERT INTO trips (id, destination, start_date, end_date, duration_days, activities, created_at)
-     VALUES (@id, @destination, @startDate, @endDate, @durationDays, @activities, @createdAt)`,
+    `INSERT INTO trips (id, destination, purpose, start_date, end_date, duration_days, activities, created_at)
+     VALUES (@id, @destination, @purpose, @startDate, @endDate, @durationDays, @activities, @createdAt)`,
   ).run({ ...trip, activities: JSON.stringify(trip.activities) });
   return trip;
 }

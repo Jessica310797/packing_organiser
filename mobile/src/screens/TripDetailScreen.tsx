@@ -14,7 +14,7 @@ import {
   resolveReview,
   uploadPhoto,
 } from "../api/client";
-import { colors, formStyles, spacing, textStyles } from "../theme";
+import { colors, formStyles, radius, spacing, textStyles } from "../theme";
 import { InventoryRow } from "../components/InventoryRow";
 import { ReviewRow } from "../components/ReviewRow";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -110,7 +110,10 @@ export default function TripDetailScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
+    <ScrollView
+      style={{ backgroundColor: colors.bg }}
+      contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
+    >
       <View style={{ flexDirection: "row", gap: spacing.sm }}>
         <View style={{ flex: 1 }}>
           <PrimaryButton label="📷 Take photo" onPress={takePhoto} loading={analyzing} />
@@ -195,9 +198,7 @@ export default function TripDetailScreen({ route, navigation }: Props) {
 const styles = {
   resultBanner: {
     backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: "#cfe6db",
-    borderRadius: 10,
+    borderRadius: radius.md,
     padding: spacing.md,
   },
   link: { color: colors.accent, fontWeight: "600" as const, marginTop: spacing.sm },

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { CITIES } from "../data/cities";
-import { colors, formStyles } from "../theme";
+import { cardShadow, colors, formStyles, radius } from "../theme";
 
 const MAX_SUGGESTIONS = 8;
 
@@ -68,16 +68,15 @@ export function CityAutocomplete({
 
 const styles = {
   dropdown: {
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    marginTop: 6,
+    borderRadius: radius.md,
     backgroundColor: colors.card,
     overflow: "hidden" as const,
+    ...cardShadow,
   },
   row: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
