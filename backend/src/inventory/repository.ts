@@ -20,6 +20,7 @@ interface TripRow {
   end_date: string;
   duration_days: number;
   activities: string;
+  packing_target: number | null;
   created_at: string;
 }
 
@@ -32,6 +33,7 @@ function tripFromRow(row: TripRow): Trip {
     endDate: row.end_date,
     durationDays: row.duration_days,
     activities: JSON.parse(row.activities) as string[],
+    packingTarget: row.packing_target,
     createdAt: row.created_at,
   };
 }
@@ -122,6 +124,7 @@ export interface CreateTripInput {
   endDate: string;
   durationDays: number;
   activities: string[];
+  packingTarget?: number | null;
 }
 
 export function createTrip(input: CreateTripInput): Trip {
@@ -133,11 +136,12 @@ export function createTrip(input: CreateTripInput): Trip {
     endDate: input.endDate,
     durationDays: input.durationDays,
     activities: input.activities,
+    packingTarget: input.packingTarget ?? null,
     createdAt: new Date().toISOString(),
   };
   db.prepare(
-    `INSERT INTO trips (id, destination, purpose, start_date, end_date, duration_days, activities, created_at)
-     VALUES (@id, @destination, @purpose, @startDate, @endDate, @durationDays, @activities, @createdAt)`,
+    `INSERT INTO trips (id, destination, purpose, start_date, end_date, duration_days, activities, packing_target, created_at)
+     VALUES (@id, @destination, @purpose, @startDate, @endDate, @durationDays, @activities, @packingTarget, @createdAt)`,
   ).run({ ...trip, activities: JSON.stringify(trip.activities) });
   return trip;
 }

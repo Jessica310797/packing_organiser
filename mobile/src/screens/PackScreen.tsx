@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   purpose: {
     fontFamily: fonts.semiBold,
     fontSize: 11,
-    color: colors.forest,
+    color: colors.green,
     textTransform: "uppercase",
     letterSpacing: 0.3,
     marginTop: 2,

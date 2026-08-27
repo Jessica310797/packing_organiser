@@ -7,6 +7,7 @@ import { z } from "zod";
 import type { InventoryService } from "../inventory/inventoryService.js";
 import type { SupportedImageMediaType } from "../vision/visionAnalyzer.js";
 import { getTripWeather } from "../weather/weatherService.js";
+import { getDestinationPhoto } from "../photos/destinationPhotoService.js";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), "data", "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -43,6 +44,7 @@ const createTripSchema = z.object({
   endDate: z.string().trim().min(1),
   durationDays: z.number().int().positive(),
   activities: z.array(z.string().trim().min(1)).default([]),
+  packingTarget: z.number().int().positive().nullable().optional(),
 });
 
 const addItemSchema = z.object({
@@ -153,6 +155,12 @@ export function createTripsRouter(service: InventoryService): Router {
     const trip = service.getTrip(req.params.tripId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(await getTripWeather(trip.destination, trip.startDate));
+  });
+
+  router.get("/trips/:tripId/destination-photo", async (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string);
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    res.json(await getDestinationPhoto(trip.destination));
   });
 
   router.get("/trips/:tripId/photos", (req, res) => {

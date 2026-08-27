@@ -50,7 +50,7 @@ export function TripPurposeSelect({
                 return (
                   <Pressable key={option} style={styles.row} onPress={() => selectOption(option)}>
                     <Text style={[styles.rowText, isSelected && styles.rowTextSelected]}>{option}</Text>
-                    {isSelected && <Feather name="check" size={17} color={colors.forest} />}
+                    {isSelected && <Feather name="check" size={17} color={colors.green} />}
                   </Pressable>
                 );
               })}
@@ -99,5 +99,5 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   rowText: { fontFamily: fonts.regular, fontSize: 15, color: colors.ink },
-  rowTextSelected: { color: colors.forest, fontFamily: fonts.semiBold },
+  rowTextSelected: { color: colors.green, fontFamily: fonts.semiBold },
 });

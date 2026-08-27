@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { TripsStackParamList } from "../navigation/types";
 import { createTrip } from "../api/client";
@@ -18,6 +18,7 @@ export default function NewTripScreen({ navigation }: Props) {
   const [activities, setActivities] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [packingTarget, setPackingTarget] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
@@ -30,6 +31,8 @@ export default function NewTripScreen({ navigation }: Props) {
       Math.round((+new Date(endDate) - +new Date(startDate)) / 86_400_000) + 1,
     );
 
+    const parsedTarget = parseInt(packingTarget, 10);
+
     setSubmitting(true);
     try {
       const trip = await createTrip({
@@ -39,6 +42,7 @@ export default function NewTripScreen({ navigation }: Props) {
         endDate,
         durationDays,
         activities,
+        packingTarget: Number.isInteger(parsedTarget) && parsedTarget > 0 ? parsedTarget : null,
       });
       navigation.replace("TripDetail", { tripId: trip.id, destination: trip.destination });
     } catch (err) {
@@ -71,6 +75,17 @@ export default function NewTripScreen({ navigation }: Props) {
           setStartDate(s);
           setEndDate(e);
         }} />
+      </View>
+
+      <View style={formStyles.field}>
+        <Text style={textStyles.label}>How many items are you packing? (optional)</Text>
+        <TextInput
+          style={formStyles.input}
+          placeholder="e.g. 16"
+          value={packingTarget}
+          onChangeText={setPackingTarget}
+          keyboardType="number-pad"
+        />
       </View>
 
       <PrimaryButton label="Create trip" onPress={submit} loading={submitting} />

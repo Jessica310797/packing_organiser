@@ -10,6 +10,10 @@ import {
   Inter_500Medium,
   Inter_600SemiBold,
 } from "@expo-google-fonts/inter";
+import {
+  CormorantGaramond_500Medium,
+  CormorantGaramond_600SemiBold,
+} from "@expo-google-fonts/cormorant-garamond";
 import type { RootTabParamList } from "./src/navigation/types";
 import { TripsStack } from "./src/navigation/TripsStack";
 import { PackStack } from "./src/navigation/PackStack";
@@ -38,12 +42,14 @@ export default function App() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    CormorantGaramond_500Medium,
+    CormorantGaramond_600SemiBold,
   });
 
   if (!fontsLoaded) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={colors.forest} />
+        <ActivityIndicator color={colors.ink} />
       </View>
     );
   }
@@ -55,8 +61,20 @@ export default function App() {
           headerShown: false,
           tabBarActiveTintColor: colors.ink,
           tabBarInactiveTintColor: colors.mutedLight,
-          tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
-          tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+          tabBarStyle: {
+            backgroundColor: colors.card,
+            borderTopWidth: 0,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            height: 92,
+            paddingTop: 14,
+            shadowColor: "#000000",
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.05,
+            shadowRadius: 20,
+            elevation: 8,
+          },
+          tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 13, marginTop: 6 },
           tabBarLabel: TAB_LABELS[route.name as keyof RootTabParamList],
           tabBarIcon: ({ color }) => TAB_ICONS[route.name as keyof RootTabParamList](color),
         })}

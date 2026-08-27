@@ -6,6 +6,7 @@ export interface Trip {
   endDate: string; // ISO date
   durationDays: number;
   activities: string[]; // specific planned activities, e.g. "hiking", "swimming"
+  packingTarget: number | null; // optional user-set "how many items am I packing", for a real (not fabricated) progress bar
   createdAt: string;
 }
 

@@ -14,7 +14,7 @@ export function TripsStack() {
         headerStyle: { backgroundColor: colors.card },
         headerShadowVisible: false,
         headerTitleStyle: { fontFamily: fonts.semiBold, color: colors.ink, fontSize: 18 },
-        headerTintColor: colors.forest,
+        headerTintColor: colors.green,
         contentStyle: { backgroundColor: colors.bg },
       }}
     >

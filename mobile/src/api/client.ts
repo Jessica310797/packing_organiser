@@ -55,6 +55,7 @@ export interface CreateTripInput {
   endDate: string;
   durationDays: number;
   activities: string[];
+  packingTarget?: number | null;
 }
 
 export const listTrips = () => request<Trip[]>("/trips");
@@ -69,6 +70,13 @@ export interface TripWeather {
   emoji?: string;
 }
 export const getWeather = (tripId: string) => request<TripWeather>(`/trips/${tripId}/weather`);
+
+export interface DestinationPhoto {
+  available: boolean;
+  url?: string;
+}
+export const getDestinationPhoto = (tripId: string) =>
+  request<DestinationPhoto>(`/trips/${tripId}/destination-photo`);
 
 // --- inventory -------------------------------------------------------------
 

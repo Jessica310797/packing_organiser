@@ -206,9 +206,9 @@ export default function TripDetailScreen({ route, navigation }: Props) {
 
 const styles = {
   resultBanner: {
-    backgroundColor: colors.sage,
+    backgroundColor: colors.paleGreen,
     borderRadius: radius.card,
     padding: spacing.md,
   },
-  link: { color: colors.forest, fontFamily: fonts.semiBold, fontSize: 14, marginTop: spacing.sm },
+  link: { color: colors.green, fontFamily: fonts.semiBold, fontSize: 14, marginTop: spacing.sm },
 };

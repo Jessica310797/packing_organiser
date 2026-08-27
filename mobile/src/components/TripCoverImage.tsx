@@ -20,16 +20,16 @@ export function TripCoverImage({
   }
   return (
     <View style={[styles.placeholder, style]}>
-      <Feather name="briefcase" size={26} color={colors.forest} style={{ opacity: 0.55 }} />
+      <Feather name="briefcase" size={26} color={colors.ink} style={{ opacity: 0.55 }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  image: { borderRadius: radius.card, backgroundColor: colors.sage },
+  image: { borderRadius: radius.card, backgroundColor: colors.beige },
   placeholder: {
     borderRadius: radius.card,
-    backgroundColor: colors.sage,
+    backgroundColor: colors.beige,
     alignItems: "center",
     justifyContent: "center",
   },

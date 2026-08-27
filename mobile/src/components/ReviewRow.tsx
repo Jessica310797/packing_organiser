@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   row: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.peach,
+    borderColor: colors.beige,
     borderRadius: radius.card,
     padding: 14,
   },

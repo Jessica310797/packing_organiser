@@ -6,6 +6,7 @@ export interface Trip {
   endDate: string;
   durationDays: number;
   activities: string[];
+  packingTarget: number | null;
   createdAt: string;
 }
 

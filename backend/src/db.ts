@@ -19,6 +19,7 @@ db.exec(`
     end_date TEXT NOT NULL,
     duration_days INTEGER NOT NULL,
     activities TEXT NOT NULL DEFAULT '[]',
+    packing_target INTEGER,
     created_at TEXT NOT NULL
   );
 
@@ -92,4 +93,7 @@ db.exec(`
 const tripColumns = db.prepare("PRAGMA table_info(trips)").all() as { name: string }[];
 if (!tripColumns.some((c) => c.name === "purpose")) {
   db.exec("ALTER TABLE trips ADD COLUMN purpose TEXT NOT NULL DEFAULT ''");
+}
+if (!tripColumns.some((c) => c.name === "packing_target")) {
+  db.exec("ALTER TABLE trips ADD COLUMN packing_target INTEGER");
 }

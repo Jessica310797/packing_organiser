@@ -20,7 +20,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.avatar}>
-        <Feather name="user" size={28} color={colors.forest} />
+        <Feather name="user" size={28} color={colors.ink} />
       </View>
       <Text style={textStyles.title}>Profile</Text>
 
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: radius.pill,
-    backgroundColor: colors.sage,
+    backgroundColor: colors.beige,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.sm,

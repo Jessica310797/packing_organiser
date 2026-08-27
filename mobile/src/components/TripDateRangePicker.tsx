@@ -23,7 +23,7 @@ function buildMarkedDates(start: string, end: string): MarkedDates {
   const endDate = new Date(end);
   while (cursor <= endDate) {
     const iso = cursor.toISOString().slice(0, 10);
-    marked[iso] = { color: colors.sage, textColor: colors.ink };
+    marked[iso] = { color: colors.paleGreen, textColor: colors.ink };
     cursor.setDate(cursor.getDate() + 1);
   }
   marked[start] = { startingDay: true, color: colors.green, textColor: colors.ink };
@@ -94,8 +94,8 @@ export function TripDateRangePicker({
               onDayPress={handleDayPress}
               enableSwipeMonths
               theme={{
-                todayTextColor: colors.forest,
-                arrowColor: colors.forest,
+                todayTextColor: colors.green,
+                arrowColor: colors.green,
                 textMonthFontWeight: "600",
                 textDayFontSize: 14,
                 textMonthFontSize: 15,

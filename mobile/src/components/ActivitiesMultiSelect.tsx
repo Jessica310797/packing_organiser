@@ -44,7 +44,7 @@ export function ActivitiesMultiSelect({
               style={[chipStyles.chip, selected && chipStyles.chipSelected, styles.chipRow]}
               onPress={() => toggle(activity)}
             >
-              {selected && <Feather name="check" size={13} color={colors.forest} />}
+              {selected && <Feather name="check" size={13} color={colors.green} />}
               <Text style={[chipStyles.chipLabel, selected && chipStyles.chipLabelSelected]}>{activity}</Text>
             </Pressable>
           );
