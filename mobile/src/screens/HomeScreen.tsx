@@ -15,7 +15,7 @@ import {
   type TripWeather,
 } from "../api/client";
 import { formatDateRange, isTripCurrent, isTripPast } from "../lib/dates";
-import { getUserName } from "../lib/profile";
+import { useAuth } from "../lib/authContext";
 import { colors, spacing, textStyles } from "../theme";
 import { PlanTripCard } from "../components/PlanTripCard";
 import { CurrentTripCard } from "../components/CurrentTripCard";
@@ -53,14 +53,13 @@ async function loadTripMeta(trip: Trip): Promise<TripWithMeta> {
 }
 
 export default function HomeScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const [current, setCurrent] = useState<TripWithMeta[] | null>(null);
   const [past, setPast] = useState<TripWithMeta[]>([]);
-  const [name, setName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setError(null);
-    getUserName().then(setName);
     listTrips()
       .then(async (trips) => {
         const withMeta = await Promise.all(trips.map(loadTripMeta));
@@ -87,7 +86,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       <Text style={styles.greeting}>
         {greeting()}
-        {name ? `, ${name}` : ""}
+        {user?.name ? `, ${user.name}` : ""}
       </Text>
       <Text style={styles.subtitle}>Where are we off to next?</Text>
 

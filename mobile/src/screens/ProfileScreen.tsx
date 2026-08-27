@@ -1,20 +1,34 @@
-import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useEffect, useState } from "react";
+import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
-import { getUserName, setUserName } from "../lib/profile";
+import { useAuth } from "../lib/authContext";
+import { updateMyName } from "../api/client";
 import { colors, formStyles, radius, spacing, textStyles } from "../theme";
 
 export default function ProfileScreen() {
-  const [name, setName] = useState("");
+  const { user, refreshUser, signOut } = useAuth();
+  const [name, setName] = useState(user?.name ?? "");
 
-  useFocusEffect(() => {
-    getUserName().then((n) => setName(n ?? ""));
-  });
+  useEffect(() => {
+    setName(user?.name ?? "");
+  }, [user?.name]);
 
-  function handleChange(value: string) {
-    setName(value);
-    setUserName(value).catch(() => {});
+  async function saveName() {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === user?.name) return;
+    try {
+      const updated = await updateMyName(trimmed);
+      refreshUser(updated);
+    } catch (err) {
+      Alert.alert("Couldn't save name", (err as Error).message);
+    }
+  }
+
+  function handleSignOut() {
+    Alert.alert("Log out?", undefined, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Log out", style: "destructive", onPress: () => signOut() },
+    ]);
   }
 
   return (
@@ -23,16 +37,22 @@ export default function ProfileScreen() {
         <Feather name="user" size={28} color={colors.ink} />
       </View>
       <Text style={textStyles.title}>Profile</Text>
+      {user && <Text style={styles.email}>{user.email}</Text>}
 
       <View style={styles.field}>
         <Text style={textStyles.label}>Your name</Text>
         <TextInput
           style={formStyles.input}
           value={name}
-          onChangeText={handleChange}
+          onChangeText={setName}
+          onBlur={saveName}
           placeholder="e.g. Jess"
         />
       </View>
+
+      <Text style={styles.logout} onPress={handleSignOut}>
+        Log out
+      </Text>
     </View>
   );
 }
@@ -48,5 +68,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: spacing.sm,
   },
+  email: { ...textStyles.muted },
   field: { width: "100%", marginTop: spacing.lg },
+  logout: { ...textStyles.body, color: colors.danger, marginTop: spacing.xl },
 });

@@ -14,6 +14,7 @@ import type {
 
 interface TripRow {
   id: string;
+  user_id: string;
   destination: string;
   purpose: string;
   start_date: string;
@@ -141,7 +142,7 @@ export interface CreateTripInput {
   packingTarget?: number | null;
 }
 
-export function createTrip(input: CreateTripInput): Trip {
+export function createTrip(userId: string, input: CreateTripInput): Trip {
   const trip: Trip = {
     id: randomUUID(),
     destination: input.destination,
@@ -154,19 +155,24 @@ export function createTrip(input: CreateTripInput): Trip {
     createdAt: new Date().toISOString(),
   };
   db.prepare(
-    `INSERT INTO trips (id, destination, purpose, start_date, end_date, duration_days, activities, packing_target, created_at)
-     VALUES (@id, @destination, @purpose, @startDate, @endDate, @durationDays, @activities, @packingTarget, @createdAt)`,
-  ).run({ ...trip, activities: JSON.stringify(trip.activities) });
+    `INSERT INTO trips (id, user_id, destination, purpose, start_date, end_date, duration_days, activities, packing_target, created_at)
+     VALUES (@id, @userId, @destination, @purpose, @startDate, @endDate, @durationDays, @activities, @packingTarget, @createdAt)`,
+  ).run({ ...trip, userId, activities: JSON.stringify(trip.activities) });
   return trip;
 }
 
-export function getTrip(id: string): Trip | undefined {
-  const row = db.prepare(`SELECT * FROM trips WHERE id = ?`).get(id) as TripRow | undefined;
+/** Scoped to the owning user -- returns undefined for a trip that doesn't exist OR belongs to someone else. */
+export function getTrip(id: string, userId: string): Trip | undefined {
+  const row = db.prepare(`SELECT * FROM trips WHERE id = ? AND user_id = ?`).get(id, userId) as
+    | TripRow
+    | undefined;
   return row ? tripFromRow(row) : undefined;
 }
 
-export function listTrips(): Trip[] {
-  const rows = db.prepare(`SELECT * FROM trips ORDER BY created_at DESC`).all() as TripRow[];
+export function listTrips(userId: string): Trip[] {
+  const rows = db
+    .prepare(`SELECT * FROM trips WHERE user_id = ? ORDER BY created_at DESC`)
+    .all(userId) as TripRow[];
   return rows.map(tripFromRow);
 }
 

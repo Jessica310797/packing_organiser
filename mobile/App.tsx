@@ -17,9 +17,11 @@ import {
 import type { RootTabParamList } from "./src/navigation/types";
 import { TripsStack } from "./src/navigation/TripsStack";
 import { PackStack } from "./src/navigation/PackStack";
+import { AuthStack } from "./src/navigation/AuthStack";
 import WardrobeScreen from "./src/screens/WardrobeScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import { colors, fonts } from "./src/theme";
+import { AuthProvider, useAuth } from "./src/lib/authContext";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -36,6 +38,58 @@ const TAB_LABELS: Record<keyof RootTabParamList, string> = {
   PackTab: "Pack",
   ProfileTab: "Profile",
 };
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.ink,
+        tabBarInactiveTintColor: colors.mutedLight,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopWidth: 0,
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28,
+          height: 92,
+          paddingTop: 14,
+          shadowColor: "#000000",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 20,
+          elevation: 8,
+        },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 13, marginTop: 6 },
+        tabBarLabel: TAB_LABELS[route.name as keyof RootTabParamList],
+        tabBarIcon: ({ color }) => TAB_ICONS[route.name as keyof RootTabParamList](color),
+      })}
+    >
+      <Tab.Screen name="TripsTab" component={TripsStack} />
+      <Tab.Screen name="WardrobeTab" component={WardrobeScreen} />
+      <Tab.Screen name="PackTab" component={PackStack} />
+      <Tab.Screen name="ProfileTab" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
+
+function AppNavigator() {
+  const { status } = useAuth();
+
+  if (status === "loading") {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.ink} />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      {status === "signedIn" ? <MainTabs /> : <AuthStack />}
+      <StatusBar style="dark" />
+    </NavigationContainer>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -55,37 +109,9 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: colors.ink,
-          tabBarInactiveTintColor: colors.mutedLight,
-          tabBarStyle: {
-            backgroundColor: colors.card,
-            borderTopWidth: 0,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            height: 92,
-            paddingTop: 14,
-            shadowColor: "#000000",
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.05,
-            shadowRadius: 20,
-            elevation: 8,
-          },
-          tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 13, marginTop: 6 },
-          tabBarLabel: TAB_LABELS[route.name as keyof RootTabParamList],
-          tabBarIcon: ({ color }) => TAB_ICONS[route.name as keyof RootTabParamList](color),
-        })}
-      >
-        <Tab.Screen name="TripsTab" component={TripsStack} />
-        <Tab.Screen name="WardrobeTab" component={WardrobeScreen} />
-        <Tab.Screen name="PackTab" component={PackStack} />
-        <Tab.Screen name="ProfileTab" component={ProfileScreen} />
-      </Tab.Navigator>
-      <StatusBar style="dark" />
-    </NavigationContainer>
+    <AuthProvider>
+      <AppNavigator />
+    </AuthProvider>
   );
 }
 

@@ -24,16 +24,17 @@ export class InventoryService {
     private llmMatcher: LLMMatcher,
   ) {}
 
-  createTrip(input: repo.CreateTripInput): Trip {
-    return repo.createTrip(input);
+  createTrip(userId: string, input: repo.CreateTripInput): Trip {
+    return repo.createTrip(userId, input);
   }
 
-  getTrip(id: string): Trip | undefined {
-    return repo.getTrip(id);
+  /** Scoped to the owning user -- undefined for a trip that doesn't exist OR belongs to someone else. */
+  getTrip(id: string, userId: string): Trip | undefined {
+    return repo.getTrip(id, userId);
   }
 
-  listTrips(): Trip[] {
-    return repo.listTrips();
+  listTrips(userId: string): Trip[] {
+    return repo.listTrips(userId);
   }
 
   getInventory(tripId: string): InventoryItem[] {
@@ -59,8 +60,13 @@ export class InventoryService {
    * the operation that must never silently double-count an item that was
    * already photographed in an earlier upload for the same trip.
    */
-  async ingestPhoto(tripId: string, filePath: string, photoInput: PhotoInput): Promise<IngestPhotoResult> {
-    const trip = repo.getTrip(tripId);
+  async ingestPhoto(
+    tripId: string,
+    userId: string,
+    filePath: string,
+    photoInput: PhotoInput,
+  ): Promise<IngestPhotoResult> {
+    const trip = repo.getTrip(tripId, userId);
     if (!trip) throw new Error(`Trip not found: ${tripId}`);
 
     const photo = repo.createPhoto(tripId, filePath);
@@ -147,22 +153,41 @@ export class InventoryService {
     });
   }
 
-  editItem(itemId: string, patch: repo.UpdateItemPatch): InventoryItem | undefined {
+  /** tripId must be the caller's already-ownership-verified trip -- undefined if the item isn't actually in it. */
+  editItem(tripId: string, itemId: string, patch: repo.UpdateItemPatch): InventoryItem | undefined {
+    const item = repo.getItem(itemId);
+    if (!item || item.tripId !== tripId) return undefined;
     return repo.updateItem(itemId, patch);
   }
 
-  removeItem(itemId: string): void {
+  /** tripId must be the caller's already-ownership-verified trip -- no-op if the item isn't actually in it. */
+  removeItem(tripId: string, itemId: string): void {
+    const item = repo.getItem(itemId);
+    if (!item || item.tripId !== tripId) return;
     repo.removeItem(itemId);
   }
 
-  /** Applies a user's decision on a detection the reconciler couldn't resolve on its own. */
-  resolveReview(candidateId: string, resolution: ReviewResolution): InventoryItem | undefined {
+  /**
+   * Applies a user's decision on a detection the reconciler couldn't resolve
+   * on its own. Takes userId directly (rather than a pre-verified tripId)
+   * since the route only has a candidateId to start from.
+   */
+  resolveReview(userId: string, candidateId: string, resolution: ReviewResolution): InventoryItem | undefined {
     const candidate = repo.getReviewCandidate(candidateId);
     if (!candidate) throw new Error(`Review candidate not found: ${candidateId}`);
+    if (!repo.getTrip(candidate.tripId, userId)) {
+      // Candidate exists but this user doesn't own its trip -- same error as
+      // "not found" so we don't reveal that a candidate with this id exists.
+      throw new Error(`Review candidate not found: ${candidateId}`);
+    }
 
     let result: InventoryItem | undefined;
 
     if (resolution.action === "confirm_match") {
+      const targetItem = repo.getItem(resolution.itemId);
+      if (!targetItem || targetItem.tripId !== candidate.tripId) {
+        throw new Error(`Item not found on this trip: ${resolution.itemId}`);
+      }
       repo.insertObservation({
         itemId: resolution.itemId,
         photoId: candidate.photoId,

@@ -11,8 +11,17 @@ db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    name TEXT,
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS trips (
     id TEXT PRIMARY KEY,
+    user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
     destination TEXT NOT NULL,
     purpose TEXT NOT NULL DEFAULT '',
     start_date TEXT NOT NULL,
@@ -22,6 +31,8 @@ db.exec(`
     packing_target INTEGER,
     created_at TEXT NOT NULL
   );
+
+  CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id);
 
   CREATE TABLE IF NOT EXISTS photos (
     id TEXT PRIMARY KEY,
@@ -79,6 +90,7 @@ db.exec(`
   -- for new trips from this.
   CREATE TABLE IF NOT EXISTS wardrobe_items (
     id TEXT PRIMARY KEY,
+    user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     normalized_name TEXT NOT NULL,
     category TEXT,
@@ -87,6 +99,8 @@ db.exec(`
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  CREATE INDEX IF NOT EXISTS idx_wardrobe_items_user ON wardrobe_items(user_id);
 `);
 
 // Lightweight migration for databases created before `purpose` existed.
@@ -96,4 +110,18 @@ if (!tripColumns.some((c) => c.name === "purpose")) {
 }
 if (!tripColumns.some((c) => c.name === "packing_target")) {
   db.exec("ALTER TABLE trips ADD COLUMN packing_target INTEGER");
+}
+// user_id is nullable here purely for the migration step -- rows from before
+// accounts existed have no owner and become inaccessible under the new
+// per-user scoping (expected for dev data; there's no user to attribute
+// them to). Every row created after this point always has a real user_id.
+if (!tripColumns.some((c) => c.name === "user_id")) {
+  db.exec("ALTER TABLE trips ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id)");
+}
+
+const wardrobeColumns = db.prepare("PRAGMA table_info(wardrobe_items)").all() as { name: string }[];
+if (!wardrobeColumns.some((c) => c.name === "user_id")) {
+  db.exec("ALTER TABLE wardrobe_items ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_wardrobe_items_user ON wardrobe_items(user_id)");
 }

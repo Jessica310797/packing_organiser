@@ -10,9 +10,13 @@ twice just because it appears in more than one photo.
 
 ```bash
 npm install
-cp .env.example .env   # fill in ANTHROPIC_API_KEY
+cp .env.example .env   # fill in ANTHROPIC_API_KEY and JWT_SECRET
 npm run dev            # starts the app on http://localhost:3000
 ```
+
+`JWT_SECRET` is required (the server refuses to start without it) — generate one with
+`openssl rand -hex 32`. Keep it stable once you're using the app for real:
+changing it invalidates every existing login.
 
 Open **http://localhost:3000** — there's a small built-in web UI (no separate
 frontend project or build step) so you can create a trip, upload/take packing
@@ -81,10 +85,29 @@ once the type-level dedup above is validated with real photos.
 - `review_candidates` — ambiguous detections awaiting a user decision
 - `wardrobe_items` — a separate, trip-independent closet (see below)
 
+## Accounts
+
+Email + password, `src/auth/`. Passwords are hashed with bcrypt; sessions are
+a JWT (30-day expiry) the client sends as `Authorization: Bearer <token>`.
+Every `/trips` and `/wardrobe` route requires one and only ever returns data
+owned by that token's user — trying to read or edit someone else's trip
+returns a plain 404, not a 403, so existence isn't leaked either. The one
+exception is `GET /trips/:id/photos/:photoId/file`: it's left unauthenticated
+because `<Image>` can't attach a custom header cross-platform, so it's
+protected only by the photo id being an unguessable UUID (an "unlisted
+link" model, same as most photo-hosting URLs) — every route that reveals a
+photo's *existence* still requires the owning user's token.
+
+No password reset, email verification, or refresh-token rotation yet — a
+reasonable MVP simplification, not a finished auth system.
+
 ## API
 
 | Method & path | Purpose |
 | --- | --- |
+| `POST /auth/signup` | Create an account (`email`, `password`, optional `name`) — returns `{user, token}` |
+| `POST /auth/login` | `{email, password}` — returns `{user, token}` |
+| `GET /auth/me` | The authenticated user |
 | `POST /trips` | Create a trip (`destination`, `purpose`, `startDate`, `endDate`, `durationDays`, `activities[]`) |
 | `GET /trips` / `GET /trips/:id` | List / fetch a trip |
 | `POST /trips/:id/photos` | Upload a packing photo (`multipart/form-data`, field `photo`) — runs vision detection + reconciliation, returns the updated inventory and match/add/ambiguous counts |
@@ -122,6 +145,7 @@ itself isn't built.
 
 ## Not built yet
 
-- Comparing the inventory against trip requirements/recommendations (item 9
-  in the brief), and using the wardrobe to seed those recommendations —
-  deferred until the inventory itself is trustworthy.
+- Using the wardrobe to seed packing recommendations (recommendations
+  currently come from a rule-based purpose/activity/weather engine, not
+  from what's actually in the user's closet).
+- Password reset, email verification, refresh-token rotation.

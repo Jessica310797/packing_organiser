@@ -7,6 +7,7 @@ import type {
   ReviewCandidate,
   ReviewResolution,
   Trip,
+  User,
   WardrobeItem,
 } from "./types";
 
@@ -29,12 +30,33 @@ class ApiError extends Error {
   }
 }
 
+// Set by AuthProvider whenever the signed-in state changes -- api/client.ts
+// is a plain module (not a component), so this is the simplest way for
+// every request to know the current session without threading a token
+// through every single API function's call sites.
+let authToken: string | null = null;
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
+
+// Also set by AuthProvider: called once, on any 401, so the app can drop
+// back to the login screen instead of leaving stale, now-invalid state
+// around (e.g. an expired 30-day token).
+let unauthorizedHandler: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, init);
+  const headers = new Headers(init?.headers);
+  if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   const contentType = res.headers.get("content-type") ?? "";
   const body = contentType.includes("application/json") ? await res.json() : undefined;
 
   if (!res.ok) {
+    if (res.status === 401) unauthorizedHandler?.();
     const message =
       body && typeof body === "object" && "error" in body
         ? JSON.stringify((body as { error: unknown }).error)
@@ -51,6 +73,23 @@ function json(method: string, body?: unknown): RequestInit {
     body: body ? JSON.stringify(body) : undefined,
   };
 }
+
+// --- auth ------------------------------------------------------------------
+
+export interface AuthResult {
+  user: User;
+  token: string;
+}
+
+export const signup = (email: string, password: string, name: string | null) =>
+  request<AuthResult>("/auth/signup", json("POST", { email, password, name: name || undefined }));
+
+export const login = (email: string, password: string) =>
+  request<AuthResult>("/auth/login", json("POST", { email, password }));
+
+export const getMe = () => request<User>("/auth/me");
+
+export const updateMyName = (name: string) => request<User>("/auth/me", json("PATCH", { name }));
 
 // --- trips ---------------------------------------------------------------
 

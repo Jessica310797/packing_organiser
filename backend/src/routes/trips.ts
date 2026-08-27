@@ -9,6 +9,7 @@ import type { SupportedImageMediaType } from "../vision/visionAnalyzer.js";
 import { getTripWeather } from "../weather/weatherService.js";
 import { getDestinationPhoto } from "../photos/destinationPhotoService.js";
 import { getPackingRecommendations } from "../recommendations/recommendationService.js";
+import { requireAuth } from "../auth/middleware.js";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), "data", "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -73,33 +74,33 @@ const resolveReviewSchema = z
 export function createTripsRouter(service: InventoryService): Router {
   const router = Router();
 
-  router.post("/trips", (req, res) => {
+  router.post("/trips", requireAuth, (req, res) => {
     const parsed = createTripSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.flatten() });
     }
-    const trip = service.createTrip(parsed.data);
+    const trip = service.createTrip(req.userId as string, parsed.data);
     res.status(201).json(trip);
   });
 
-  router.get("/trips", (_req, res) => {
-    res.json(service.listTrips());
+  router.get("/trips", requireAuth, (req, res) => {
+    res.json(service.listTrips(req.userId as string));
   });
 
-  router.get("/trips/:tripId", (req, res) => {
-    const trip = service.getTrip(req.params.tripId!);
+  router.get("/trips/:tripId", requireAuth, (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(trip);
   });
 
-  router.get("/trips/:tripId/inventory", (req, res) => {
-    const trip = service.getTrip(req.params.tripId!);
+  router.get("/trips/:tripId/inventory", requireAuth, (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(service.getInventory(trip.id));
   });
 
-  router.post("/trips/:tripId/inventory", (req, res) => {
-    const trip = service.getTrip(req.params.tripId!);
+  router.post("/trips/:tripId/inventory", requireAuth, (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
 
     const parsed = addItemSchema.safeParse(req.body);
@@ -114,28 +115,34 @@ export function createTripsRouter(service: InventoryService): Router {
     res.status(201).json(item);
   });
 
-  router.patch("/trips/:tripId/inventory/:itemId", (req, res) => {
+  router.patch("/trips/:tripId/inventory/:itemId", requireAuth, (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
+
     const parsed = editItemSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.flatten() });
     }
-    const item = service.editItem(req.params.itemId!, parsed.data);
+    const item = service.editItem(trip.id, req.params.itemId as string, parsed.data);
     if (!item) return res.status(404).json({ error: "Item not found" });
     res.json(item);
   });
 
-  router.delete("/trips/:tripId/inventory/:itemId", (req, res) => {
-    service.removeItem(req.params.itemId!);
+  router.delete("/trips/:tripId/inventory/:itemId", requireAuth, (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
+
+    service.removeItem(trip.id, req.params.itemId as string);
     res.status(204).send();
   });
 
-  router.get("/trips/:tripId/review", (req, res) => {
-    const trip = service.getTrip(req.params.tripId!);
+  router.get("/trips/:tripId/review", requireAuth, (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(service.getPendingReview(trip.id));
   });
 
-  router.post("/review/:candidateId/resolve", (req, res) => {
+  router.post("/review/:candidateId/resolve", requireAuth, (req, res) => {
     const parsed = resolveReviewSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.flatten() });
@@ -145,39 +152,45 @@ export function createTripsRouter(service: InventoryService): Router {
         parsed.data.action === "confirm_match"
           ? ({ action: "confirm_match", itemId: parsed.data.itemId! } as const)
           : ({ action: parsed.data.action } as const);
-      const item = service.resolveReview(req.params.candidateId!, resolution);
+      const item = service.resolveReview(req.userId as string, req.params.candidateId as string, resolution);
       res.json({ item: item ?? null });
     } catch (err) {
       res.status(404).json({ error: (err as Error).message });
     }
   });
 
-  router.get("/trips/:tripId/weather", async (req, res) => {
-    const trip = service.getTrip(req.params.tripId as string);
+  router.get("/trips/:tripId/weather", requireAuth, async (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(await getTripWeather(trip.destination, trip.startDate));
   });
 
-  router.get("/trips/:tripId/destination-photo", async (req, res) => {
-    const trip = service.getTrip(req.params.tripId as string);
+  router.get("/trips/:tripId/destination-photo", requireAuth, async (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(await getDestinationPhoto(trip.destination));
   });
 
-  router.get("/trips/:tripId/recommendations", async (req, res) => {
-    const trip = service.getTrip(req.params.tripId as string);
+  router.get("/trips/:tripId/recommendations", requireAuth, async (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     const inventory = service.getInventory(trip.id);
     const weather = await getTripWeather(trip.destination, trip.startDate);
     res.json(getPackingRecommendations(trip, inventory, weather));
   });
 
-  router.get("/trips/:tripId/photos", (req, res) => {
-    const trip = service.getTrip(req.params.tripId as string);
+  router.get("/trips/:tripId/photos", requireAuth, (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(service.getPhotos(trip.id));
   });
 
+  // Deliberately NOT behind requireAuth: <Image> can't attach an
+  // Authorization header cross-platform (react-native-web renders this as a
+  // plain <img src>). Protected only by the photo id being an unguessable
+  // UUID -- an "unlisted link" model, same as most photo-hosting URLs. Every
+  // other route that reveals a photo's *existence* (list, upload, trip
+  // lookup) still requires the owning user's token.
   router.get("/trips/:tripId/photos/:photoId/file", (req, res) => {
     const photo = service.getPhoto(req.params.photoId as string);
     if (!photo || photo.tripId !== req.params.tripId) {
@@ -188,14 +201,14 @@ export function createTripsRouter(service: InventoryService): Router {
     });
   });
 
-  router.post("/trips/:tripId/photos", upload.single("photo"), async (req, res) => {
-    const trip = service.getTrip(req.params.tripId as string);
+  router.post("/trips/:tripId/photos", requireAuth, upload.single("photo"), async (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string, req.userId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     if (!req.file) return res.status(400).json({ error: "Missing photo file (field name 'photo')" });
 
     try {
       const imageBase64 = fs.readFileSync(req.file.path).toString("base64");
-      const result = await service.ingestPhoto(trip.id, req.file.path, {
+      const result = await service.ingestPhoto(trip.id, req.userId as string, req.file.path, {
         imageBase64,
         mediaType: req.file.mimetype as SupportedImageMediaType,
       });
