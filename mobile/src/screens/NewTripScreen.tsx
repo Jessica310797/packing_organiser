@@ -5,6 +5,7 @@ import type { RootStackParamList } from "../navigation/types";
 import { createTrip } from "../api/client";
 import { formStyles, spacing, textStyles } from "../theme";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { CityAutocomplete } from "../components/CityAutocomplete";
 
 type Props = NativeStackScreenProps<RootStackParamList, "NewTrip">;
 
@@ -51,12 +52,7 @@ export default function NewTripScreen({ navigation }: Props) {
     <ScrollView contentContainerStyle={{ padding: spacing.md }}>
       <View style={formStyles.field}>
         <Text style={textStyles.label}>Destination</Text>
-        <TextInput
-          style={formStyles.input}
-          value={destination}
-          onChangeText={setDestination}
-          placeholder="Lisbon, Portugal"
-        />
+        <CityAutocomplete value={destination} onChangeText={setDestination} placeholder="Lisbon, Portugal" />
       </View>
       <View style={formStyles.field}>
         <Text style={textStyles.label}>Start date (YYYY-MM-DD)</Text>
