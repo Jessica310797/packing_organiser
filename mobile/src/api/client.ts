@@ -12,7 +12,12 @@ import type {
 // Set with a `.env` file (see `.env.example`) — must point at wherever the
 // backend is reachable from your phone, not "localhost" (that means the
 // phone itself when the app is running on a device).
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
+//
+// Trailing slashes are stripped: every path below starts with "/", so a
+// trailing slash here would produce a double-slash URL (".../​/trips") that
+// Express's router 404s on -- easy to introduce when copying a URL straight
+// out of a browser address bar or the Codespaces Ports tab.
+export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 /** Turns a relative API path (e.g. a Photo's `url`) into a fetchable absolute URL. */
 export const apiUrl = (relativePath: string) => `${API_BASE_URL}${relativePath}`;
