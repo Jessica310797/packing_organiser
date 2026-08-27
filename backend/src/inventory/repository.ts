@@ -73,7 +73,20 @@ interface InventoryItemRow {
   updated_at: string;
 }
 
+/** Most recent photo this item was actually observed in (heuristic/LLM match or original detection), if any. */
+function latestPhotoIdForItem(itemId: string): string | null {
+  const row = db
+    .prepare(
+      `SELECT photo_id FROM item_observations
+       WHERE item_id = ? AND photo_id IS NOT NULL
+       ORDER BY created_at DESC LIMIT 1`,
+    )
+    .get(itemId) as { photo_id: string } | undefined;
+  return row?.photo_id ?? null;
+}
+
 function itemFromRow(row: InventoryItemRow): InventoryItem {
+  const photoId = latestPhotoIdForItem(row.id);
   return {
     id: row.id,
     tripId: row.trip_id,
@@ -84,6 +97,7 @@ function itemFromRow(row: InventoryItemRow): InventoryItem {
     confidence: row.confidence,
     status: row.status,
     source: row.source,
+    photoUrl: photoId ? `/trips/${row.trip_id}/photos/${photoId}/file` : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -234,6 +248,7 @@ export function insertItem(input: InsertItemInput): InventoryItem {
     confidence: input.confidence,
     status: "active",
     source: input.source,
+    photoUrl: null, // no observation exists yet at insert time -- see itemFromRow for the read path
     createdAt: now,
     updatedAt: now,
   };

@@ -31,6 +31,7 @@ function makeItem(name: string, quantity: number, category: string | null = null
     confidence: null,
     status: "active",
     source: "manual",
+    photoUrl: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
   };

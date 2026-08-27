@@ -22,6 +22,7 @@ function makeItem(overrides: Partial<InventoryItem> & { name: string }): Invento
     confidence: overrides.confidence ?? 0.9,
     status: overrides.status ?? "active",
     source: overrides.source ?? "vision",
+    photoUrl: overrides.photoUrl ?? null,
     createdAt: overrides.createdAt ?? new Date().toISOString(),
     updatedAt: overrides.updatedAt ?? new Date().toISOString(),
   };

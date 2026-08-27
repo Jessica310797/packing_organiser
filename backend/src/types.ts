@@ -34,6 +34,8 @@ export interface InventoryItem {
   confidence: number | null;
   status: ItemStatus;
   source: ItemSource;
+  /** Relative API path to the most recent photo this item was actually detected in, or null (manual items). */
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { WardrobeItem } from "../api/types";
+import { categoryIconName } from "../lib/categoryIcon";
 import { colors, fonts, radius, textStyles } from "../theme";
 
 export function WardrobeRow({
@@ -16,6 +18,9 @@ export function WardrobeRow({
 }) {
   return (
     <View style={styles.row}>
+      <View style={styles.thumb}>
+        <MaterialCommunityIcons name={categoryIconName(item.category)} size={18} color={colors.green} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={textStyles.cardTitle}>{item.name}</Text>
         <Text style={textStyles.muted}>{item.category ?? "uncategorized"}</Text>
@@ -44,6 +49,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  thumb: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.paleGreen,
+    alignItems: "center",
+    justifyContent: "center",
   },
   qty: {
     backgroundColor: colors.bg,
