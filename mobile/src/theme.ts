@@ -5,15 +5,15 @@ import { StyleSheet } from "react-native";
 // system sans for body/UI text, soft semantic status pills, image-forward
 // cards separated by subtle shadow.
 export const colors = {
-  bg: "#F6F3EC",
+  bg: "#FBF8F2",
   card: "#FFFFFF",
   ink: "#1C1B19",
   muted: "#8A8579",
-  mutedLight: "#B7B2A4",
-  border: "#E9E3D6",
+  mutedLight: "#C4BFAE",
+  border: "#EFE9DC",
   accent: "#1C1B19", // primary CTA / selection color is ink-black, not a hue
-  accentSoft: "#EFEAE0",
-  tan: "#E7DFC9", // icon-circle / decorative fill
+  accentSoft: "#F5F1E5",
+  tan: "#EAE1C9", // icon-circle / decorative fill
   progressGoodBg: "#DEE6D3",
   progressGoodInk: "#4B6B3D",
   progressLowBg: "#F2E3C9",

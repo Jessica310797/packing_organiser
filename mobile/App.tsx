@@ -1,7 +1,9 @@
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import {
   useFonts,
   PlayfairDisplay_400Regular,
@@ -17,11 +19,11 @@ import { colors } from "./src/theme";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const TAB_ICONS: Record<keyof RootTabParamList, string> = {
-  TripsTab: "🧳",
-  WardrobeTab: "👕",
-  PackTab: "🎒",
-  ProfileTab: "👤",
+const TAB_ICONS: Record<keyof RootTabParamList, (color: string) => React.ReactNode> = {
+  TripsTab: (color) => <Ionicons name="briefcase-outline" size={22} color={color} />,
+  WardrobeTab: (color) => <MaterialCommunityIcons name="hanger" size={22} color={color} />,
+  PackTab: (color) => <Ionicons name="bag-handle-outline" size={22} color={color} />,
+  ProfileTab: (color) => <Ionicons name="person-outline" size={22} color={color} />,
 };
 
 const TAB_LABELS: Record<keyof RootTabParamList, string> = {
@@ -55,9 +57,7 @@ export default function App() {
           tabBarInactiveTintColor: colors.mutedLight,
           tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
           tabBarLabel: TAB_LABELS[route.name as keyof RootTabParamList],
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>{TAB_ICONS[route.name as keyof RootTabParamList]}</Text>
-          ),
+          tabBarIcon: ({ color }) => TAB_ICONS[route.name as keyof RootTabParamList](color),
         })}
       >
         <Tab.Screen name="TripsTab" component={TripsStack} />
