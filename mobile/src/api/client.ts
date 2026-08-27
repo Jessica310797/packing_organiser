@@ -3,6 +3,7 @@ import type {
   IngestPhotoResult,
   InventoryItem,
   Photo,
+  RecommendedItem,
   ReviewCandidate,
   ReviewResolution,
   Trip,
@@ -82,6 +83,9 @@ export interface DestinationPhoto {
 }
 export const getDestinationPhoto = (tripId: string) =>
   request<DestinationPhoto>(`/trips/${tripId}/destination-photo`);
+
+export const getRecommendations = (tripId: string) =>
+  request<RecommendedItem[]>(`/trips/${tripId}/recommendations`);
 
 // --- inventory -------------------------------------------------------------
 

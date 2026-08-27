@@ -5,11 +5,12 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ParamListBase } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import type { TripDetailParams } from "../navigation/types";
-import type { IngestPhotoResult, InventoryItem, ReviewCandidate } from "../api/types";
+import type { IngestPhotoResult, InventoryItem, RecommendedItem, ReviewCandidate } from "../api/types";
 import {
   addManualItem,
   editItem,
   getInventory,
+  getRecommendations,
   getReview,
   removeItem,
   resolveReview,
@@ -18,6 +19,7 @@ import {
 import { colors, formStyles, fonts, radius, spacing, textStyles } from "../theme";
 import { InventoryRow } from "../components/InventoryRow";
 import { ReviewRow } from "../components/ReviewRow";
+import { RecommendationRow } from "../components/RecommendationRow";
 import { PrimaryButton } from "../components/PrimaryButton";
 
 // Reachable from both the Trips tab's stack and the Pack tab's stack, so
@@ -34,16 +36,22 @@ export default function TripDetailScreen({ route, navigation }: Props) {
 
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [review, setReview] = useState<ReviewCandidate[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendedItem[]>([]);
   const [lastResult, setLastResult] = useState<IngestPhotoResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("");
 
+  const refreshRecommendations = useCallback(() => {
+    getRecommendations(tripId).then(setRecommendations).catch(() => {});
+  }, [tripId]);
+
   const refresh = useCallback(() => {
     getInventory(tripId).then(setInventory).catch((err) => Alert.alert("Error", err.message));
     getReview(tripId).then(setReview).catch(() => {});
-  }, [tripId]);
+    refreshRecommendations();
+  }, [tripId, refreshRecommendations]);
 
   useFocusEffect(refresh);
   useEffect(() => navigation.setOptions({ title: destination }), [navigation, destination]);
@@ -92,11 +100,13 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     const quantity = Math.max(1, item.quantity + delta);
     const updated = await editItem(tripId, item.id, { quantity });
     setInventory((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+    refreshRecommendations();
   }
 
   async function handleRemove(item: InventoryItem) {
     await removeItem(tripId, item.id);
     setInventory((prev) => prev.filter((i) => i.id !== item.id));
+    refreshRecommendations();
   }
 
   async function submitManualAdd() {
@@ -110,6 +120,7 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     setNewName("");
     setNewCategory("");
     setShowAddForm(false);
+    refreshRecommendations();
   }
 
   async function handleResolve(candidateId: string, action: Parameters<typeof resolveReview>[1]) {
@@ -183,6 +194,20 @@ export default function TripDetailScreen({ route, navigation }: Props) {
       </View>
 
       <View>
+        <Text style={textStyles.title}>Recommended for this trip</Text>
+        <Text style={styles.recommendedHint}>
+          A suggested checklist based on your trip's purpose, activities, length, and forecast --
+          not a hard requirement.
+        </Text>
+        <View style={{ gap: spacing.xs, marginTop: spacing.sm }}>
+          {recommendations.length === 0 && <Text style={textStyles.muted}>No suggestions yet.</Text>}
+          {recommendations.map((item) => (
+            <RecommendationRow key={item.name} item={item} />
+          ))}
+        </View>
+      </View>
+
+      <View>
         <Text style={textStyles.title}>Needs your review ({review.length})</Text>
         <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
           {review.length === 0 && <Text style={textStyles.muted}>Nothing waiting on you.</Text>}
@@ -211,4 +236,5 @@ const styles = {
     padding: spacing.md,
   },
   link: { color: colors.green, fontFamily: fonts.semiBold, fontSize: 14, marginTop: spacing.sm },
+  recommendedHint: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted, marginTop: 2 },
 };

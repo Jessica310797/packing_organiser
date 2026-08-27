@@ -8,6 +8,7 @@ import type { InventoryService } from "../inventory/inventoryService.js";
 import type { SupportedImageMediaType } from "../vision/visionAnalyzer.js";
 import { getTripWeather } from "../weather/weatherService.js";
 import { getDestinationPhoto } from "../photos/destinationPhotoService.js";
+import { getPackingRecommendations } from "../recommendations/recommendationService.js";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), "data", "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -161,6 +162,14 @@ export function createTripsRouter(service: InventoryService): Router {
     const trip = service.getTrip(req.params.tripId as string);
     if (!trip) return res.status(404).json({ error: "Trip not found" });
     res.json(await getDestinationPhoto(trip.destination));
+  });
+
+  router.get("/trips/:tripId/recommendations", async (req, res) => {
+    const trip = service.getTrip(req.params.tripId as string);
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
+    const inventory = service.getInventory(trip.id);
+    const weather = await getTripWeather(trip.destination, trip.startDate);
+    res.json(getPackingRecommendations(trip, inventory, weather));
   });
 
   router.get("/trips/:tripId/photos", (req, res) => {

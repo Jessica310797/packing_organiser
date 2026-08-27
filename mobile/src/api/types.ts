@@ -73,3 +73,12 @@ export type ReviewResolution =
   | { action: "confirm_match"; itemId: string }
   | { action: "confirm_new" }
   | { action: "discard" };
+
+export interface RecommendedItem {
+  name: string;
+  category: string;
+  recommendedQuantity: number;
+  packedQuantity: number;
+  status: "packed" | "partial" | "missing";
+  reasons: string[];
+}
