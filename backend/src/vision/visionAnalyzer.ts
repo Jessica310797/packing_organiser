@@ -29,7 +29,12 @@ const REPORT_ITEMS_TOOL: Anthropic.Tool = {
           properties: {
             name: {
               type: "string",
-              description: "Short, specific name a person would use, e.g. 'blue t-shirt', 'phone charger'.",
+              description:
+                "A specific, descriptive name -- include distinguishing details a person would use to tell " +
+                "it apart from similar items in their own wardrobe: colour, pattern, and for clothing the " +
+                "cut/silhouette and neckline or sleeve style where visible (e.g. 'zebra print halterneck " +
+                "maxi dress', not just 'zebra print maxi dress' or 'dress'; 'black wrap-front blouse', not " +
+                "'black top'). Don't invent details you can't actually see in the photo.",
             },
             category: {
               type: "string",
@@ -60,7 +65,10 @@ const SYSTEM_PROMPT =
   "You are an assistant that inventories the contents of a suitcase from a photo taken while someone packs. " +
   "Identify every distinct physical item that would be packed for a trip. Ignore the suitcase/bag itself, " +
   "hands, background, and furniture. If the same item type appears multiple times together in this single " +
-  "photo (e.g. 3 identical pairs of socks), report it once with the correct quantity rather than repeating it.";
+  "photo (e.g. 3 identical pairs of socks), report it once with the correct quantity rather than repeating it. " +
+  "Name each item specifically enough that someone with several similar pieces could tell them apart -- for " +
+  "clothing that means colour/pattern plus visible style details like cut, neckline, or sleeve length, not " +
+  "just the generic garment type.";
 
 /** Calls Claude's vision + forced tool-use to turn one packing photo into structured item detections. */
 export class ClaudeVisionAnalyzer implements VisionAnalyzer {
