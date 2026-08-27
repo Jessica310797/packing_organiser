@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Calendar, type DateData } from "react-native-calendars";
-import { colors, formStyles, radius, spacing } from "../theme";
+import Feather from "@expo/vector-icons/Feather";
+import { colors, fonts, formStyles, radius, spacing } from "../theme";
 import { formatDate, formatDateRange as formatRange } from "../lib/dates";
 
 type MarkedDates = Record<
@@ -13,7 +14,7 @@ function buildMarkedDates(start: string, end: string): MarkedDates {
   if (!start) return {};
   if (!end || end === start) {
     return {
-      [start]: { startingDay: true, endingDay: true, color: colors.accent, textColor: "#fff" },
+      [start]: { startingDay: true, endingDay: true, color: colors.green, textColor: colors.ink },
     };
   }
 
@@ -22,11 +23,11 @@ function buildMarkedDates(start: string, end: string): MarkedDates {
   const endDate = new Date(end);
   while (cursor <= endDate) {
     const iso = cursor.toISOString().slice(0, 10);
-    marked[iso] = { color: colors.accentSoft, textColor: colors.ink };
+    marked[iso] = { color: colors.sage, textColor: colors.ink };
     cursor.setDate(cursor.getDate() + 1);
   }
-  marked[start] = { startingDay: true, color: colors.accent, textColor: "#fff" };
-  marked[end] = { ...marked[end], endingDay: true, color: colors.accent, textColor: "#fff" };
+  marked[start] = { startingDay: true, color: colors.green, textColor: colors.ink };
+  marked[end] = { ...marked[end], endingDay: true, color: colors.green, textColor: colors.ink };
   return marked;
 }
 
@@ -74,7 +75,7 @@ export function TripDateRangePicker({
         <Text style={displayText ? styles.selectText : styles.placeholderText}>
           {displayText || "Select trip dates"}
         </Text>
-        <Text style={styles.chevron}>📅</Text>
+        <Feather name="calendar" size={17} color={colors.muted} />
       </Pressable>
 
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
@@ -93,9 +94,9 @@ export function TripDateRangePicker({
               onDayPress={handleDayPress}
               enableSwipeMonths
               theme={{
-                todayTextColor: colors.accent,
-                arrowColor: colors.accent,
-                textMonthFontWeight: "700",
+                todayTextColor: colors.forest,
+                arrowColor: colors.forest,
+                textMonthFontWeight: "600",
                 textDayFontSize: 14,
                 textMonthFontSize: 15,
               }}
@@ -118,30 +119,29 @@ const styles = StyleSheet.create({
   select: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
+    borderRadius: radius.input,
     paddingVertical: 13,
     paddingHorizontal: 14,
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  selectText: { fontSize: 15, color: colors.ink },
-  placeholderText: { fontSize: 15, color: colors.mutedLight },
-  chevron: { fontSize: 15 },
+  selectText: { fontFamily: fonts.regular, fontSize: 15, color: colors.ink },
+  placeholderText: { fontFamily: fonts.regular, fontSize: 15, color: colors.mutedLight },
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(32,33,31,0.4)",
     justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    borderTopLeftRadius: radius.cardLarge,
+    borderTopRightRadius: radius.cardLarge,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.md,
   },
-  sheetTitle: { fontSize: 17, fontWeight: "700", color: colors.ink },
-  sheetSubtitle: { fontSize: 13, color: colors.muted, marginBottom: spacing.sm, marginTop: 2 },
+  sheetTitle: { fontFamily: fonts.semiBold, fontSize: 17, color: colors.ink },
+  sheetSubtitle: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginBottom: spacing.sm, marginTop: 2 },
 });

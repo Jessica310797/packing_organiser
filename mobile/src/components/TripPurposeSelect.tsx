@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
 import { OTHER_PURPOSE, TRIP_PURPOSES } from "../data/tripPurposes";
-import { colors, formStyles, radius, spacing } from "../theme";
+import { colors, fonts, formStyles, radius, spacing } from "../theme";
 
 export function TripPurposeSelect({
   value,
@@ -27,7 +28,7 @@ export function TripPurposeSelect({
         <Text style={selectedOption ? styles.selectText : styles.placeholderText}>
           {selectedOption || "Select trip purpose"}
         </Text>
-        <Text style={styles.chevron}>⌄</Text>
+        <Feather name="chevron-down" size={18} color={colors.muted} />
       </Pressable>
 
       {selectedOption === OTHER_PURPOSE && (
@@ -49,7 +50,7 @@ export function TripPurposeSelect({
                 return (
                   <Pressable key={option} style={styles.row} onPress={() => selectOption(option)}>
                     <Text style={[styles.rowText, isSelected && styles.rowTextSelected]}>{option}</Text>
-                    {isSelected && <Text style={styles.check}>✓</Text>}
+                    {isSelected && <Feather name="check" size={17} color={colors.forest} />}
                   </Pressable>
                 );
               })}
@@ -65,31 +66,30 @@ const styles = StyleSheet.create({
   select: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
+    borderRadius: radius.input,
     paddingVertical: 13,
     paddingHorizontal: 14,
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  selectText: { fontSize: 15, color: colors.ink },
-  placeholderText: { fontSize: 15, color: colors.mutedLight },
-  chevron: { fontSize: 16, color: colors.muted },
+  selectText: { fontFamily: fonts.regular, fontSize: 15, color: colors.ink },
+  placeholderText: { fontFamily: fonts.regular, fontSize: 15, color: colors.mutedLight },
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(32,33,31,0.4)",
     justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    borderTopLeftRadius: radius.cardLarge,
+    borderTopRightRadius: radius.cardLarge,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.md,
   },
-  sheetTitle: { fontSize: 17, fontWeight: "700", color: colors.ink, marginBottom: spacing.sm },
+  sheetTitle: { fontFamily: fonts.semiBold, fontSize: 17, color: colors.ink, marginBottom: spacing.sm },
   row: {
     paddingVertical: 14,
     borderBottomWidth: 1,
@@ -98,7 +98,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  rowText: { fontSize: 15, color: colors.ink },
-  rowTextSelected: { color: colors.accent, fontWeight: "700" },
-  check: { color: colors.accent, fontWeight: "700", fontSize: 16 },
+  rowText: { fontFamily: fonts.regular, fontSize: 15, color: colors.ink },
+  rowTextSelected: { color: colors.forest, fontFamily: fonts.semiBold },
 });

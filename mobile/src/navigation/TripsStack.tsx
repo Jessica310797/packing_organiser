@@ -13,8 +13,8 @@ export function TripsStack() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.card },
         headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: fonts.serifSemiBold, color: colors.ink, fontSize: 18 },
-        headerTintColor: colors.ink,
+        headerTitleStyle: { fontFamily: fonts.semiBold, color: colors.ink, fontSize: 18 },
+        headerTintColor: colors.forest,
         contentStyle: { backgroundColor: colors.bg },
       }}
     >

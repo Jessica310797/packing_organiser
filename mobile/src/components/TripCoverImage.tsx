@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
 import { colors, radius } from "../theme";
 
 export function TripCoverImage({
@@ -19,18 +20,17 @@ export function TripCoverImage({
   }
   return (
     <View style={[styles.placeholder, style]}>
-      <Text style={styles.icon}>🧳</Text>
+      <Feather name="briefcase" size={26} color={colors.forest} style={{ opacity: 0.55 }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  image: { borderRadius: radius.md, backgroundColor: colors.tan },
+  image: { borderRadius: radius.card, backgroundColor: colors.sage },
   placeholder: {
-    borderRadius: radius.md,
-    backgroundColor: colors.tan,
+    borderRadius: radius.card,
+    backgroundColor: colors.sage,
     alignItems: "center",
     justifyContent: "center",
   },
-  icon: { fontSize: 28, opacity: 0.6 },
 });

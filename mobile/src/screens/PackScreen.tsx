@@ -6,7 +6,7 @@ import type { PackStackParamList } from "../navigation/types";
 import type { Trip } from "../api/types";
 import { listTrips } from "../api/client";
 import { formatDateRange, isTripCurrent } from "../lib/dates";
-import { cardShadow, colors, radius, spacing, textStyles } from "../theme";
+import { colors, fonts, radius, spacing, textStyles } from "../theme";
 
 type Props = NativeStackScreenProps<PackStackParamList, "PackHome">;
 
@@ -46,20 +46,21 @@ export default function PackScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  intro: { fontSize: 14, color: colors.muted, marginBottom: spacing.md },
-  empty: { color: colors.muted, fontSize: 14 },
+  intro: { fontFamily: fonts.regular, fontSize: 14, color: colors.muted, marginBottom: spacing.md },
+  empty: { fontFamily: fonts.regular, color: colors.muted, fontSize: 14 },
   card: {
     backgroundColor: colors.card,
-    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
     padding: spacing.md,
     gap: 2,
-    ...cardShadow,
   },
-  meta: { fontSize: 12.5, color: colors.muted },
+  meta: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted },
   purpose: {
+    fontFamily: fonts.semiBold,
     fontSize: 11,
-    fontWeight: "700",
-    color: colors.ink,
+    color: colors.forest,
     textTransform: "uppercase",
     letterSpacing: 0.3,
     marginTop: 2,

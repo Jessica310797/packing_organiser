@@ -2,28 +2,28 @@ import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import {
   useFonts,
-  PlayfairDisplay_400Regular,
-  PlayfairDisplay_600SemiBold,
-  PlayfairDisplay_700Bold,
-} from "@expo-google-fonts/playfair-display";
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from "@expo-google-fonts/inter";
 import type { RootTabParamList } from "./src/navigation/types";
 import { TripsStack } from "./src/navigation/TripsStack";
 import { PackStack } from "./src/navigation/PackStack";
 import WardrobeScreen from "./src/screens/WardrobeScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
-import { colors } from "./src/theme";
+import { colors, fonts } from "./src/theme";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const TAB_ICONS: Record<keyof RootTabParamList, (color: string) => React.ReactNode> = {
-  TripsTab: (color) => <Ionicons name="briefcase-outline" size={22} color={color} />,
+  TripsTab: (color) => <Feather name="briefcase" size={21} color={color} />,
   WardrobeTab: (color) => <MaterialCommunityIcons name="hanger" size={22} color={color} />,
-  PackTab: (color) => <Ionicons name="bag-handle-outline" size={22} color={color} />,
-  ProfileTab: (color) => <Ionicons name="person-outline" size={22} color={color} />,
+  PackTab: (color) => <Feather name="shopping-bag" size={21} color={color} />,
+  ProfileTab: (color) => <Feather name="user" size={21} color={color} />,
 };
 
 const TAB_LABELS: Record<keyof RootTabParamList, string> = {
@@ -35,15 +35,15 @@ const TAB_LABELS: Record<keyof RootTabParamList, string> = {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    PlayfairDisplay_400Regular,
-    PlayfairDisplay_600SemiBold,
-    PlayfairDisplay_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
   });
 
   if (!fontsLoaded) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={colors.ink} />
+        <ActivityIndicator color={colors.forest} />
       </View>
     );
   }
@@ -56,6 +56,7 @@ export default function App() {
           tabBarActiveTintColor: colors.ink,
           tabBarInactiveTintColor: colors.mutedLight,
           tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+          tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
           tabBarLabel: TAB_LABELS[route.name as keyof RootTabParamList],
           tabBarIcon: ({ color }) => TAB_ICONS[route.name as keyof RootTabParamList](color),
         })}

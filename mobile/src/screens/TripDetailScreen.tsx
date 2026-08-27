@@ -15,7 +15,7 @@ import {
   resolveReview,
   uploadPhoto,
 } from "../api/client";
-import { colors, formStyles, radius, spacing, textStyles } from "../theme";
+import { colors, formStyles, fonts, radius, spacing, textStyles } from "../theme";
 import { InventoryRow } from "../components/InventoryRow";
 import { ReviewRow } from "../components/ReviewRow";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -125,10 +125,10 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     >
       <View style={{ flexDirection: "row", gap: spacing.sm }}>
         <View style={{ flex: 1 }}>
-          <PrimaryButton label="📷 Take photo" onPress={takePhoto} loading={analyzing} />
+          <PrimaryButton label="Take photo" icon="camera" onPress={takePhoto} loading={analyzing} />
         </View>
         <View style={{ flex: 1 }}>
-          <PrimaryButton label="🖼 Choose photo" onPress={pickFromLibrary} loading={analyzing} />
+          <PrimaryButton label="Choose photo" icon="image" onPress={pickFromLibrary} loading={analyzing} />
         </View>
       </View>
 
@@ -206,9 +206,9 @@ export default function TripDetailScreen({ route, navigation }: Props) {
 
 const styles = {
   resultBanner: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radius.md,
+    backgroundColor: colors.sage,
+    borderRadius: radius.card,
     padding: spacing.md,
   },
-  link: { color: colors.accent, fontWeight: "600" as const, marginTop: spacing.sm },
+  link: { color: colors.forest, fontFamily: fonts.semiBold, fontSize: 14, marginTop: spacing.sm },
 };

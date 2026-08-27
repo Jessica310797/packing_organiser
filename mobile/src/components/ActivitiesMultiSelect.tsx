@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
 import { ACTIVITY_OPTIONS } from "../data/activityOptions";
-import { chipStyles, colors, formStyles, spacing } from "../theme";
+import { chipStyles, colors, formStyles, radius, spacing } from "../theme";
 
 export function ActivitiesMultiSelect({
   value,
@@ -40,13 +41,11 @@ export function ActivitiesMultiSelect({
           return (
             <Pressable
               key={activity}
-              style={[chipStyles.chip, selected && chipStyles.chipSelected]}
+              style={[chipStyles.chip, selected && chipStyles.chipSelected, styles.chipRow]}
               onPress={() => toggle(activity)}
             >
-              <Text style={[chipStyles.chipLabel, selected && chipStyles.chipLabelSelected]}>
-                {selected ? "✓ " : ""}
-                {activity}
-              </Text>
+              {selected && <Feather name="check" size={13} color={colors.forest} />}
+              <Text style={[chipStyles.chipLabel, selected && chipStyles.chipLabelSelected]}>{activity}</Text>
             </Pressable>
           );
         })}
@@ -62,7 +61,7 @@ export function ActivitiesMultiSelect({
           returnKeyType="done"
         />
         <Pressable style={styles.addButton} onPress={addCustom}>
-          <Text style={styles.addButtonLabel}>Add</Text>
+          <Feather name="plus" size={16} color={colors.ink} />
         </Pressable>
       </View>
     </View>
@@ -71,14 +70,15 @@ export function ActivitiesMultiSelect({
 
 const styles = StyleSheet.create({
   chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  chipRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   addRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
   addButton: {
-    paddingHorizontal: 16,
+    width: 44,
+    alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    backgroundColor: colors.bg,
+    borderRadius: radius.input,
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  addButtonLabel: { color: colors.ink, fontWeight: "600", fontSize: 14 },
 });

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { InventoryItem, ReviewCandidate } from "../api/types";
-import { colors, formStyles, radius, textStyles } from "../theme";
+import { chipStyles, colors, radius, textStyles } from "../theme";
 
 export function ReviewRow({
   candidate,
@@ -23,19 +23,15 @@ export function ReviewRow({
 
       <View style={styles.actions}>
         {candidateItems.map((item) => (
-          <Pressable
-            key={item.id}
-            style={formStyles.buttonSecondary}
-            onPress={() => onConfirmMatch(item.id)}
-          >
-            <Text style={formStyles.buttonSecondaryLabel}>Same as: {item.name}</Text>
+          <Pressable key={item.id} style={chipStyles.chip} onPress={() => onConfirmMatch(item.id)}>
+            <Text style={chipStyles.chipLabel}>Same as: {item.name}</Text>
           </Pressable>
         ))}
-        <Pressable style={formStyles.buttonSecondary} onPress={onConfirmNew}>
-          <Text style={formStyles.buttonSecondaryLabel}>It's new</Text>
+        <Pressable style={chipStyles.chip} onPress={onConfirmNew}>
+          <Text style={chipStyles.chipLabel}>It's new</Text>
         </Pressable>
-        <Pressable style={formStyles.buttonSecondary} onPress={onDiscard}>
-          <Text style={[formStyles.buttonSecondaryLabel, { color: colors.danger }]}>Discard</Text>
+        <Pressable style={chipStyles.chip} onPress={onDiscard}>
+          <Text style={[chipStyles.chipLabel, { color: colors.danger }]}>Discard</Text>
         </Pressable>
       </View>
     </View>
@@ -44,8 +40,10 @@ export function ReviewRow({
 
 const styles = StyleSheet.create({
   row: {
-    backgroundColor: colors.warnBg,
-    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.peach,
+    borderRadius: radius.card,
     padding: 14,
   },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },

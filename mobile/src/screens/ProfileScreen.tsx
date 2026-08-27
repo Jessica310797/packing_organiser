@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import Feather from "@expo/vector-icons/Feather";
 import { getUserName, setUserName } from "../lib/profile";
 import { colors, formStyles, radius, spacing, textStyles } from "../theme";
 
@@ -19,7 +20,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.avatar}>
-        <Text style={{ fontSize: 28 }}>🙂</Text>
+        <Feather name="user" size={28} color={colors.forest} />
       </View>
       <Text style={textStyles.title}>Profile</Text>
 
@@ -31,7 +32,6 @@ export default function ProfileScreen() {
           onChangeText={handleChange}
           placeholder="e.g. Jess"
         />
-        <Text style={styles.hint}>Used for the "Good morning" greeting on the Trips tab.</Text>
       </View>
     </View>
   );
@@ -43,11 +43,10 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: radius.pill,
-    backgroundColor: colors.tan,
+    backgroundColor: colors.sage,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.sm,
   },
   field: { width: "100%", marginTop: spacing.lg },
-  hint: { fontSize: 12, color: colors.muted, marginTop: 6 },
 });

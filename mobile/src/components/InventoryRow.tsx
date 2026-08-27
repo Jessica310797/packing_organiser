@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
 import type { InventoryItem } from "../api/types";
-import { cardShadow, colors, radius, textStyles } from "../theme";
+import { colors, fonts, radius, textStyles } from "../theme";
 
 export function InventoryRow({
   item,
@@ -15,21 +16,19 @@ export function InventoryRow({
 }) {
   return (
     <View style={styles.row}>
-      <View style={{ flex: 1 }}>
-        <Text style={textStyles.cardTitle}>
-          {item.name} {item.source === "manual" ? "✏️" : ""}
-        </Text>
-        <Text style={textStyles.muted}>{item.category ?? "uncategorized"}</Text>
+      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Text style={textStyles.cardTitle}>{item.name}</Text>
+        {item.source === "manual" && <Feather name="edit-2" size={12} color={colors.muted} />}
       </View>
       <Text style={styles.qty}>×{item.quantity}</Text>
       <Pressable style={styles.smallBtn} onPress={onDecrement}>
-        <Text>−</Text>
+        <Feather name="minus" size={14} color={colors.ink} />
       </Pressable>
       <Pressable style={styles.smallBtn} onPress={onIncrement}>
-        <Text>+</Text>
+        <Feather name="plus" size={14} color={colors.ink} />
       </Pressable>
       <Pressable style={styles.smallBtn} onPress={onRemove}>
-        <Text style={{ color: colors.danger }}>✕</Text>
+        <Feather name="x" size={14} color={colors.danger} />
       </Pressable>
     </View>
   );
@@ -41,9 +40,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     padding: 12,
-    borderRadius: radius.md,
+    borderRadius: radius.card,
     backgroundColor: colors.card,
-    ...cardShadow,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   qty: {
     backgroundColor: colors.bg,
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 3,
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: fonts.semiBold,
     color: colors.ink,
   },
   smallBtn: {
