@@ -38,9 +38,24 @@ physical phone or from Expo Go.
 npm start
 ```
 
+If your terminal and your phone aren't reachable on the same local network
+(true for Codespaces, and for most cloud dev environments), use
+`npm start -- --tunnel` instead — this routes through Expo's relay so it
+works regardless of network setup. The first run will offer to install
+`@expo/ngrok`; accept it.
+
 This prints a QR code. Scan it with Expo Go (Android: in-app scanner; iOS:
 your regular Camera app, then tap the notification). The app opens on your
 phone, live-reloading as you edit code.
+
+**Version note:** this project targets Expo SDK 54, deliberately kept a
+version or two behind the newest SDK. Expo Go's app-store build lags the
+latest SDK release by some margin — often a single version — so pinning
+here avoids a "you need a newer version of Expo Go" error that even a
+freshly-installed Expo Go can hit. If this project is ever upgraded to a
+newer SDK, confirm Expo Go's app-store build actually supports it first
+(check the version note on https://expo.dev/go), or use `eas build` for
+your own custom dev client instead of Expo Go.
 
 ## What's here
 
