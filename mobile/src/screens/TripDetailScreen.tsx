@@ -113,6 +113,7 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     <ScrollView
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
+      keyboardShouldPersistTaps="handled"
     >
       <View style={{ flexDirection: "row", gap: spacing.sm }}>
         <View style={{ flex: 1 }}>

@@ -49,7 +49,7 @@ export default function NewTripScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+    <ScrollView contentContainerStyle={{ padding: spacing.md }} keyboardShouldPersistTaps="handled">
       <View style={formStyles.field}>
         <Text style={textStyles.label}>Destination</Text>
         <CityAutocomplete value={destination} onChangeText={setDestination} placeholder="Lisbon, Portugal" />
