@@ -32,8 +32,6 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 
-  CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id);
-
   CREATE TABLE IF NOT EXISTS photos (
     id TEXT PRIMARY KEY,
     trip_id TEXT NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
@@ -100,7 +98,6 @@ db.exec(`
     updated_at TEXT NOT NULL
   );
 
-  CREATE INDEX IF NOT EXISTS idx_wardrobe_items_user ON wardrobe_items(user_id);
 `);
 
 // Lightweight migration for databases created before `purpose` existed.
@@ -117,11 +114,14 @@ if (!tripColumns.some((c) => c.name === "packing_target")) {
 // them to). Every row created after this point always has a real user_id.
 if (!tripColumns.some((c) => c.name === "user_id")) {
   db.exec("ALTER TABLE trips ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id)");
 }
+// Run unconditionally (and only after the column above is guaranteed to
+// exist, whether from this ALTER or from the original CREATE TABLE) --
+// IF NOT EXISTS makes this safe to repeat on every startup.
+db.exec("CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id)");
 
 const wardrobeColumns = db.prepare("PRAGMA table_info(wardrobe_items)").all() as { name: string }[];
 if (!wardrobeColumns.some((c) => c.name === "user_id")) {
   db.exec("ALTER TABLE wardrobe_items ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_wardrobe_items_user ON wardrobe_items(user_id)");
 }
+db.exec("CREATE INDEX IF NOT EXISTS idx_wardrobe_items_user ON wardrobe_items(user_id)");
