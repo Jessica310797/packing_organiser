@@ -87,3 +87,25 @@ export interface WardrobeItem {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Which of the three fixed groups a reusable packing list belongs to. */
+export type PackingListCategory = "travel_type" | "destination" | "activity";
+
+/** A reusable, user-owned packing list (e.g. "Hiking" under activity), independent of any one trip. */
+export interface PackingList {
+  id: string;
+  category: PackingListCategory;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PackingListItem {
+  id: string;
+  listId: string;
+  name: string;
+  category: string | null;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+}

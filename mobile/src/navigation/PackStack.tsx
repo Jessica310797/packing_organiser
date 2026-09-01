@@ -1,7 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { PackStackParamList } from "./types";
 import PackScreen from "../screens/PackScreen";
-import TripDetailScreen from "../screens/TripDetailScreen";
+import PackingListDetailScreen from "../screens/PackingListDetailScreen";
 import { colors, fonts } from "../theme";
 
 const Stack = createNativeStackNavigator<PackStackParamList>();
@@ -18,7 +18,11 @@ export function PackStack() {
       }}
     >
       <Stack.Screen name="PackHome" component={PackScreen} options={{ title: "Pack" }} />
-      <Stack.Screen name="TripDetail" component={TripDetailScreen} />
+      <Stack.Screen
+        name="PackingListDetail"
+        component={PackingListDetailScreen}
+        options={({ route }) => ({ title: route.params.name })}
+      />
     </Stack.Navigator>
   );
 }

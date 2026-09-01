@@ -6,9 +6,11 @@ export type TripsStackParamList = {
   TripDetail: TripDetailParams;
 };
 
+export type PackingListDetailParams = { listId: string; name: string };
+
 export type PackStackParamList = {
   PackHome: undefined;
-  TripDetail: TripDetailParams;
+  PackingListDetail: PackingListDetailParams;
 };
 
 export type RootTabParamList = {

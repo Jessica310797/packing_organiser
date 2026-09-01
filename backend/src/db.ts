@@ -98,6 +98,31 @@ db.exec(`
     updated_at TEXT NOT NULL
   );
 
+  -- Reusable packing lists a user builds once and reuses across trips,
+  -- grouped into three fixed categories (see PackingListCategory).
+  CREATE TABLE IF NOT EXISTS packing_lists (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_packing_lists_user ON packing_lists(user_id);
+
+  CREATE TABLE IF NOT EXISTS packing_list_items (
+    id TEXT PRIMARY KEY,
+    list_id TEXT NOT NULL REFERENCES packing_lists(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    category TEXT,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_packing_list_items_list ON packing_list_items(list_id);
+
 `);
 
 // Lightweight migration for databases created before `purpose` existed.

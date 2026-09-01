@@ -6,6 +6,8 @@
  * reasonable heuristics, not a science.
  */
 
+import type { PackingListCategory } from "../types.js";
+
 export interface ItemTemplate {
   name: string;
   category: string;
@@ -151,6 +153,46 @@ export const ACTIVITY_ITEMS: Record<string, ItemTemplate[]> = {
     { name: "Laptop", category: "Electronics", quantity: 1 },
   ],
 };
+
+/** Keyed by the exact strings in mobile/src/data/travelTypeOptions.ts. */
+export const TRAVEL_TYPE_ITEMS: Record<string, ItemTemplate[]> = {
+  Plane: [
+    { name: "Travel pillow", category: "Essentials", quantity: 1 },
+    { name: "Portable charger", category: "Electronics", quantity: 1 },
+    { name: "Headphones", category: "Electronics", quantity: 1 },
+    { name: "Travel documents wallet", category: "Documents", quantity: 1 },
+  ],
+  "Road Trip": [
+    { name: "Car phone charger", category: "Electronics", quantity: 1 },
+    { name: "Water bottle", category: "Essentials", quantity: 1 },
+    { name: "Snacks", category: "Essentials", quantity: 1 },
+  ],
+  Train: [
+    { name: "Travel pillow", category: "Essentials", quantity: 1 },
+    { name: "Headphones", category: "Electronics", quantity: 1 },
+    { name: "Portable charger", category: "Electronics", quantity: 1 },
+  ],
+  "Cruise / Ferry": [
+    { name: "Motion sickness tablets", category: "Medication", quantity: 1 },
+    { name: "Formal outfit", category: "Clothing", quantity: 1 },
+    { name: "Lanyard", category: "Accessories", quantity: 1 },
+  ],
+  Bus: [
+    { name: "Travel pillow", category: "Essentials", quantity: 1 },
+    { name: "Headphones", category: "Electronics", quantity: 1 },
+    { name: "Snacks", category: "Essentials", quantity: 1 },
+  ],
+};
+
+/** Starter items for a new reusable packing list, matched by its category + exact name -- empty for a custom name with no template. */
+export function findStarterItems(category: PackingListCategory, name: string): ItemTemplate[] {
+  if (category === "activity") return ACTIVITY_ITEMS[name] ?? [];
+  if (category === "travel_type") return TRAVEL_TYPE_ITEMS[name] ?? [];
+  // "destination" lists reuse the purpose templates -- many purposes are
+  // destination-flavored (Beach Holiday, City Break) and there's no separate
+  // destination-specific template set.
+  return PURPOSE_ITEMS[name] ?? [];
+}
 
 export function resolveQuantity(template: ItemTemplate, durationDays: number): number {
   if (template.quantity !== undefined) return template.quantity;

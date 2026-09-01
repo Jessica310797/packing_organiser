@@ -91,3 +91,23 @@ export interface RecommendedItem {
   status: "packed" | "partial" | "missing";
   reasons: string[];
 }
+
+export type PackingListCategory = "travel_type" | "destination" | "activity";
+
+export interface PackingList {
+  id: string;
+  category: PackingListCategory;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PackingListItem {
+  id: string;
+  listId: string;
+  name: string;
+  category: string | null;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+}

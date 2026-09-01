@@ -2,6 +2,9 @@ import { Platform } from "react-native";
 import type {
   IngestPhotoResult,
   InventoryItem,
+  PackingList,
+  PackingListCategory,
+  PackingListItem,
   Photo,
   RecommendedItem,
   ReviewCandidate,
@@ -205,3 +208,36 @@ export const editWardrobeItem = (
 
 export const removeWardrobeItem = (itemId: string) =>
   request<void>(`/wardrobe/${itemId}`, { method: "DELETE" });
+
+// --- packing lists (reusable, grouped by travel type / destination / activity) ---
+
+export interface PackingListWithItems {
+  list: PackingList;
+  items: PackingListItem[];
+}
+
+export const listPackingLists = () => request<PackingList[]>("/packing-lists");
+
+export const createPackingList = (category: PackingListCategory, name: string) =>
+  request<PackingListWithItems>("/packing-lists", json("POST", { category, name }));
+
+export const getPackingList = (listId: string) =>
+  request<PackingListWithItems>(`/packing-lists/${listId}`);
+
+export const renamePackingList = (listId: string, name: string) =>
+  request<PackingList>(`/packing-lists/${listId}`, json("PATCH", { name }));
+
+export const deletePackingList = (listId: string) =>
+  request<void>(`/packing-lists/${listId}`, { method: "DELETE" });
+
+export const addPackingListItem = (listId: string, input: AddItemInput) =>
+  request<PackingListItem>(`/packing-lists/${listId}/items`, json("POST", input));
+
+export const editPackingListItem = (
+  listId: string,
+  itemId: string,
+  patch: Partial<{ name: string; category: string | null; quantity: number }>,
+) => request<PackingListItem>(`/packing-lists/${listId}/items/${itemId}`, json("PATCH", patch));
+
+export const removePackingListItem = (listId: string, itemId: string) =>
+  request<void>(`/packing-lists/${listId}/items/${itemId}`, { method: "DELETE" });

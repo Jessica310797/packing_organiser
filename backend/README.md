@@ -84,6 +84,8 @@ once the type-level dedup above is validated with real photos.
   was merged into an item, with which photo and which tier matched it
 - `review_candidates` — ambiguous detections awaiting a user decision
 - `wardrobe_items` — a separate, trip-independent closet (see below)
+- `packing_lists` / `packing_list_items` — reusable, trip-independent packing
+  lists (see below)
 
 ## Accounts
 
@@ -122,6 +124,14 @@ reasonable MVP simplification, not a finished auth system.
 | `POST /review/:candidateId/resolve` | Resolve one: `{action: "confirm_match", itemId}` \| `{action: "confirm_new"}` \| `{action: "discard"}` |
 | `GET /wardrobe` / `POST /wardrobe` | List / manually add to the user's general wardrobe (independent of any trip) |
 | `PATCH /wardrobe/:itemId` / `DELETE /wardrobe/:itemId` | Correct / remove a wardrobe item |
+| `GET /packing-lists` | List the user's reusable packing lists |
+| `POST /packing-lists` | Create a list (`category`: `travel_type` \| `destination` \| `activity`, `name`) — auto-prefilled with starter items when the name matches a known template; returns `{list, items}` |
+| `GET /packing-lists/:id` | Fetch one list with its items — returns `{list, items}` |
+| `PATCH /packing-lists/:id` | Rename a list |
+| `DELETE /packing-lists/:id` | Delete a list (and its items, via cascade) |
+| `POST /packing-lists/:id/items` | Add an item to a list |
+| `PATCH /packing-lists/:id/items/:itemId` | Correct an item (name/category/quantity) |
+| `DELETE /packing-lists/:id/items/:itemId` | Remove an item |
 
 ## Weather
 
@@ -142,6 +152,18 @@ auto-populated from trip inventories yet — that's the natural seed for
 future packing recommendations (comparing what's in the wardrobe against
 what a new trip's purpose/activities suggest), but the recommendation logic
 itself isn't built.
+
+## Packing lists
+
+A third kind of list, independent of the wardrobe and of any one trip: a
+user builds up a reusable list per travel type (e.g. "Plane"), destination
+(e.g. "Lisbon"), or activity (e.g. "Hiking"), then draws on it for any future
+trip that matches. Creating a list with a name that matches an existing
+recommendation template (`src/recommendations/packingTemplates.ts`) seeds it
+with that template's starter items; any other name just starts empty —
+nothing is fabricated. This reuses the same rule-based template dictionaries
+the trip recommendation engine already draws from, so the two stay in sync
+by construction rather than by convention.
 
 ## Not built yet
 
