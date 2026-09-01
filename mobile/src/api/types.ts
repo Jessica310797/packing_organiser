@@ -95,6 +95,7 @@ export interface RecommendedItem {
   packedQuantity: number;
   status: "packed" | "partial" | "missing";
   reasons: string[];
+  matchedItemIds: string[];
 }
 
 export type PackingListCategory = "travel_type" | "destination" | "activity";

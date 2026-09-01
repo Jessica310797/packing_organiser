@@ -132,6 +132,21 @@ describe("getPackingRecommendations", () => {
     assert.ok(firstPackedIndex === -1 || lastMissingIndex < firstPackedIndex);
   });
 
+  test("matchedItemIds lists the real inventory item(s) backing a recommendation", () => {
+    const item = makeItem("Passport", 1);
+    const result = getPackingRecommendations(makeTrip(), [item], NO_WEATHER);
+    const passport = result.find((r) => r.name === "Passport");
+    assert.ok(passport);
+    assert.deepEqual(passport.matchedItemIds, [item.id]);
+  });
+
+  test("matchedItemIds is empty for a recommendation with nothing packed yet", () => {
+    const result = getPackingRecommendations(makeTrip(), [], NO_WEATHER);
+    const passport = result.find((r) => r.name === "Passport");
+    assert.ok(passport);
+    assert.deepEqual(passport.matchedItemIds, []);
+  });
+
   test("recomputes status when a later source raises the merged recommended quantity", () => {
     // "Swimming" alone recommends 1 swimwear; with 1 packed that reads as
     // "packed" in isolation. "Diving / Snorkeling" recommends 2 (a spare).

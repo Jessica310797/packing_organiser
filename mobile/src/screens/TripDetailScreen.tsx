@@ -1,27 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, ScrollView, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ParamListBase } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import type { TripDetailParams } from "../navigation/types";
-import type { IngestPhotoResult, InventoryItem, RecommendedItem, ReviewCandidate } from "../api/types";
+import type { InventoryItem, IngestPhotoResult, RecommendedItem, ReviewCandidate, Trip } from "../api/types";
 import {
   addManualItem,
   editItem,
   getInventory,
   getRecommendations,
   getReview,
+  getTrip,
+  getWeather,
   removeItem,
   resolveReview,
   uploadPhoto,
+  type TripWeather,
 } from "../api/client";
 import { colors, formStyles, fonts, radius, spacing, textStyles } from "../theme";
-import { InventoryRow } from "../components/InventoryRow";
+import { PackedChecklistRow, type PackedItemPatch } from "../components/PackedChecklistRow";
+import { SuggestionRow, type PackInput } from "../components/SuggestionRow";
+import { PackingProgressBar } from "../components/PackingProgressBar";
+import { TripContextBar } from "../components/TripContextBar";
 import { ReviewRow } from "../components/ReviewRow";
-import { RecommendationChecklistRow } from "../components/RecommendationChecklistRow";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { CATEGORY_LABELS, CATEGORY_ORDER, groupByCategory } from "../lib/categoryGroups";
+import { buildChecklist } from "../lib/checklist";
 import { categoryIconName } from "../lib/categoryIcon";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
@@ -37,6 +42,8 @@ type Props = {
 export default function TripDetailScreen({ route, navigation }: Props) {
   const { tripId, destination } = route.params;
 
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [weather, setWeather] = useState<TripWeather | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [review, setReview] = useState<ReviewCandidate[]>([]);
   const [recommendations, setRecommendations] = useState<RecommendedItem[]>([]);
@@ -47,7 +54,7 @@ export default function TripDetailScreen({ route, navigation }: Props) {
   const [newCategory, setNewCategory] = useState("");
 
   const refreshRecommendations = useCallback(() => {
-    getRecommendations(tripId).then(setRecommendations).catch(() => {});
+    return getRecommendations(tripId).then(setRecommendations).catch(() => {});
   }, [tripId]);
 
   const refresh = useCallback(() => {
@@ -58,6 +65,13 @@ export default function TripDetailScreen({ route, navigation }: Props) {
 
   useFocusEffect(refresh);
   useEffect(() => navigation.setOptions({ title: destination }), [navigation, destination]);
+
+  // The trip's own details (dates/purpose) and forecast don't change while
+  // viewing this screen, so these load once rather than on every focus.
+  useEffect(() => {
+    getTrip(tripId).then(setTrip).catch(() => {});
+    getWeather(tripId).then(setWeather).catch(() => {});
+  }, [tripId]);
 
   async function handlePicked(result: ImagePicker.ImagePickerResult) {
     if (result.canceled || result.assets.length === 0) return;
@@ -99,17 +113,17 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     await handlePicked(result);
   }
 
-  async function changeQuantity(item: InventoryItem, delta: number) {
-    const quantity = Math.max(1, item.quantity + delta);
-    const updated = await editItem(tripId, item.id, { quantity });
-    setInventory((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
-    refreshRecommendations();
-  }
-
-  async function handleRemove(item: InventoryItem) {
+  /** Un-packs a real item -- the obvious inverse of packing it. */
+  async function unpackItem(item: InventoryItem) {
     await removeItem(tripId, item.id);
     setInventory((prev) => prev.filter((i) => i.id !== item.id));
-    refreshRecommendations();
+    await refreshRecommendations();
+  }
+
+  async function saveItemEdit(item: InventoryItem, patch: PackedItemPatch) {
+    const updated = await editItem(tripId, item.id, patch);
+    setInventory((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+    await refreshRecommendations();
   }
 
   async function submitManualAdd() {
@@ -132,92 +146,67 @@ export default function TripDetailScreen({ route, navigation }: Props) {
   }
 
   /**
-   * Marks a recommended-but-not-fully-packed item as packed: adds an
-   * inventory item covering whatever's still short (not the full
-   * recommended quantity, in case some was already packed). The new item's
-   * name matches the recommendation's, so it flips to "packed" status on
-   * the next refresh and this row disappears from the checklist in favor
-   * of the real packed row -- no separate "confirm" step needed.
+   * Packs a suggestion, as-is or personalized (name/category/quantity edited
+   * by the user first). The new item's name matches the recommendation
+   * closely enough in the common (as-is) case to flip it to "packed" status
+   * on refresh, at which point it disappears from the suggestions list and
+   * shows as a normal packed row instead -- a personalized name may not
+   * re-match, which is fine: it's just a real item now either way.
    */
-  async function markRecommendationPacked(item: RecommendedItem) {
-    const deficit = Math.max(1, item.recommendedQuantity - item.packedQuantity);
-    const newItem = await addManualItem(tripId, { name: item.name, category: item.category, quantity: deficit });
+  async function packRecommendation(input: PackInput) {
+    const newItem = await addManualItem(tripId, input);
     setInventory((prev) => [...prev, newItem]);
     await refreshRecommendations();
   }
 
-  // One merged checklist per category: real packed items plus any
-  // recommendation for that category that isn't fully packed yet. A
-  // recommendation that reaches "packed" status simply stops appearing here
-  // (it's already represented by the matching packed item above it).
-  const packedByCategory = new Map(groupByCategory(inventory, (item) => item.category).map((g) => [g.key, g.items]));
-  const neededByCategory = new Map(
-    groupByCategory(
-      recommendations.filter((r) => r.status !== "packed"),
-      (item) => item.category,
-    ).map((g) => [g.key, g.items]),
-  );
-  const checklistGroups = CATEGORY_ORDER.filter(
-    (key) => packedByCategory.has(key) || neededByCategory.has(key),
-  ).map((key) => ({
-    key,
-    label: CATEGORY_LABELS[key]!,
-    packed: packedByCategory.get(key) ?? [],
-    needed: neededByCategory.get(key) ?? [],
-  }));
+  const checklist = buildChecklist(inventory, recommendations);
 
   return (
     <ScrollView
       style={{ backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
+      contentContainerStyle={{ padding: spacing.md, gap: spacing.lg }}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={{ flexDirection: "row", gap: spacing.sm }}>
-        <View style={{ flex: 1 }}>
-          <PrimaryButton label="Take photo" icon="camera" onPress={takePhoto} loading={analyzing} />
+      {trip && <TripContextBar trip={trip} weather={weather} />}
+
+      <PackingProgressBar packed={checklist.totalPacked} total={checklist.totalRecommended} />
+
+      <View style={{ gap: spacing.sm }}>
+        <View style={{ flexDirection: "row", gap: spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <PrimaryButton label="Take photo" icon="camera" onPress={takePhoto} loading={analyzing} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <PrimaryButton label="Choose photo" icon="image" onPress={pickFromLibrary} loading={analyzing} />
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <PrimaryButton label="Choose photo" icon="image" onPress={pickFromLibrary} loading={analyzing} />
-        </View>
+
+        {lastResult && (
+          <View style={styles.resultBanner}>
+            <Text style={textStyles.cardTitle}>Photo processed</Text>
+            <Text style={textStyles.muted}>
+              {lastResult.matchedCount} already packed (matched) · {lastResult.addedCount} new
+              {lastResult.ambiguousCount > 0 ? ` · ${lastResult.ambiguousCount} need review` : ""}
+            </Text>
+          </View>
+        )}
       </View>
 
-      {lastResult && (
-        <View style={styles.resultBanner}>
-          <Text style={textStyles.cardTitle}>Photo processed</Text>
-          <Text style={textStyles.muted}>
-            {lastResult.matchedCount} already packed (matched) · {lastResult.addedCount} new
-            {lastResult.ambiguousCount > 0 ? ` · ${lastResult.ambiguousCount} need review` : ""}
-          </Text>
-        </View>
-      )}
-
       <View>
-        <Text style={textStyles.title}>Packing checklist ({inventory.length} packed)</Text>
-        <Text style={styles.recommendedHint}>
-          What you've packed, plus suggestions based on this trip's purpose, activities, length, and
-          forecast -- tap a suggestion once you've packed it.
-        </Text>
+        <Text style={textStyles.title}>✓ Packed ({checklist.packedCount})</Text>
         <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
-          {checklistGroups.length === 0 && (
-            <Text style={textStyles.muted}>Nothing packed or suggested yet. Upload a photo or add manually.</Text>
+          {checklist.packedGroups.length === 0 && (
+            <Text style={textStyles.muted}>Nothing packed yet -- upload a photo or add manually.</Text>
           )}
-          {checklistGroups.map((group) => (
+          {checklist.packedGroups.map((group) => (
             <View key={group.key} style={{ gap: spacing.xs }}>
-              <CategoryHeader categoryKey={group.key} label={group.label} count={group.packed.length} />
-              {group.packed.map((item) => (
-                <InventoryRow
+              <CategoryHeader categoryKey={group.key} label={group.label} count={group.items.length} />
+              {group.items.map((item) => (
+                <PackedChecklistRow
                   key={item.id}
                   item={item}
-                  onIncrement={() => changeQuantity(item, 1)}
-                  onDecrement={() => changeQuantity(item, -1)}
-                  onRemove={() => handleRemove(item)}
-                />
-              ))}
-              {group.needed.map((item) => (
-                <RecommendationChecklistRow
-                  key={item.name}
-                  item={item}
-                  onMarkPacked={() => markRecommendationPacked(item)}
+                  onUnpack={() => unpackItem(item)}
+                  onSave={(patch) => saveItemEdit(item, patch)}
                 />
               ))}
             </View>
@@ -245,6 +234,24 @@ export default function TripDetailScreen({ route, navigation }: Props) {
             <PrimaryButton label="Add item" onPress={submitManualAdd} />
           </View>
         )}
+      </View>
+
+      <View>
+        <Text style={textStyles.title}>✨ Pakka recommends ({checklist.suggestions.length})</Text>
+        <Text style={styles.recommendedHint}>
+          Based on this trip's purpose, activities, length, and forecast -- pack it as-is, tap the pencil to
+          make it yours, or add it via photo.
+        </Text>
+        <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+          {checklist.suggestions.length === 0 && (
+            <Text style={textStyles.muted}>
+              {checklist.packedCount > 0 ? "Nothing else suggested -- nice work." : "No suggestions yet."}
+            </Text>
+          )}
+          {checklist.suggestions.map((item) => (
+            <SuggestionRow key={item.name} item={item} onPack={packRecommendation} onTakePhoto={takePhoto} />
+          ))}
+        </View>
       </View>
 
       <View>

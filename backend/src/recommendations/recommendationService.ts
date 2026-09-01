@@ -10,6 +10,8 @@ export interface RecommendedItem {
   packedQuantity: number;
   status: "packed" | "partial" | "missing";
   reasons: string[];
+  /** Ids of the real inventory items whose normalized name matches this recommendation -- lets a client dedupe (don't render an item twice) and know exactly what to remove if the user un-packs it. */
+  matchedItemIds: string[];
 }
 
 const STATUS_RANK: Record<RecommendedItem["status"], number> = { missing: 0, partial: 1, packed: 2 };
@@ -18,20 +20,23 @@ function weatherItems(weather: TripWeather): { template: ItemTemplate; reason: s
   if (!weather.available || weather.tempC === undefined) return [];
   const items: { template: ItemTemplate; reason: string }[] = [];
   const condition = (weather.condition ?? "").toLowerCase();
-  const reason = `Forecast: ${weather.tempC}°C, ${weather.condition ?? "—"}`;
 
   if (weather.tempC < 12) {
+    const reason = `Expect around ${weather.tempC}°C -- worth packing a warm layer.`;
     items.push({ template: { name: "Warm jacket", category: "Clothing", quantity: 1 }, reason });
     items.push({ template: { name: "Thermal layers", category: "Clothing", quantity: 1 }, reason });
   }
   if (weather.tempC > 27) {
+    const reason = `Highs around ${weather.tempC}°C -- sun protection recommended.`;
     items.push({ template: { name: "Sunscreen", category: "Toiletries", quantity: 1 }, reason });
     items.push({ template: { name: "Sunglasses", category: "Essentials", quantity: 1 }, reason });
   }
   if (condition.includes("rain") || condition.includes("drizzle") || condition.includes("shower")) {
+    const reason = `Rain in the forecast (${weather.condition}) -- worth packing something waterproof.`;
     items.push({ template: { name: "Rain jacket", category: "Clothing", quantity: 1 }, reason });
   }
   if (condition.includes("snow")) {
+    const reason = "Snow in the forecast -- pack for cold, wet conditions.";
     items.push({ template: { name: "Snow boots", category: "Footwear", quantity: 1 }, reason });
     items.push({ template: { name: "Gloves", category: "Clothing", quantity: 1 }, reason });
   }
@@ -66,8 +71,12 @@ export function getPackingRecommendations(
   sources.push(...weatherItems(weather));
 
   const packedByName = new Map<string, number>();
+  const itemIdsByName = new Map<string, string[]>();
   for (const item of inventory) {
     packedByName.set(item.normalizedName, (packedByName.get(item.normalizedName) ?? 0) + item.quantity);
+    const ids = itemIdsByName.get(item.normalizedName) ?? [];
+    ids.push(item.id);
+    itemIdsByName.set(item.normalizedName, ids);
   }
 
   const merged = new Map<string, RecommendedItem>();
@@ -96,6 +105,7 @@ export function getPackingRecommendations(
       packedQuantity,
       status: packedQuantity >= quantity ? "packed" : packedQuantity > 0 ? "partial" : "missing",
       reasons: [reason],
+      matchedItemIds: itemIdsByName.get(key) ?? [],
     });
   }
 
