@@ -21,6 +21,9 @@ import { InventoryRow } from "../components/InventoryRow";
 import { ReviewRow } from "../components/ReviewRow";
 import { RecommendationRow } from "../components/RecommendationRow";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { groupByCategory } from "../lib/categoryGroups";
+import { categoryIconName } from "../lib/categoryIcon";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 // Reachable from both the Trips tab's stack and the Pack tab's stack, so
 // this is typed loosely against a generic navigator rather than one
@@ -155,18 +158,23 @@ export default function TripDetailScreen({ route, navigation }: Props) {
 
       <View>
         <Text style={textStyles.title}>Packed inventory ({inventory.length})</Text>
-        <View style={{ gap: spacing.xs, marginTop: spacing.sm }}>
+        <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
           {inventory.length === 0 && (
             <Text style={textStyles.muted}>Nothing packed yet. Upload a photo or add manually.</Text>
           )}
-          {inventory.map((item) => (
-            <InventoryRow
-              key={item.id}
-              item={item}
-              onIncrement={() => changeQuantity(item, 1)}
-              onDecrement={() => changeQuantity(item, -1)}
-              onRemove={() => handleRemove(item)}
-            />
+          {groupByCategory(inventory, (item) => item.category).map((group) => (
+            <View key={group.key} style={{ gap: spacing.xs }}>
+              <CategoryHeader categoryKey={group.key} label={group.label} count={group.items.length} />
+              {group.items.map((item) => (
+                <InventoryRow
+                  key={item.id}
+                  item={item}
+                  onIncrement={() => changeQuantity(item, 1)}
+                  onDecrement={() => changeQuantity(item, -1)}
+                  onRemove={() => handleRemove(item)}
+                />
+              ))}
+            </View>
           ))}
         </View>
 
@@ -199,10 +207,15 @@ export default function TripDetailScreen({ route, navigation }: Props) {
           A suggested checklist based on your trip's purpose, activities, length, and forecast --
           not a hard requirement.
         </Text>
-        <View style={{ gap: spacing.xs, marginTop: spacing.sm }}>
+        <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
           {recommendations.length === 0 && <Text style={textStyles.muted}>No suggestions yet.</Text>}
-          {recommendations.map((item) => (
-            <RecommendationRow key={item.name} item={item} />
+          {groupByCategory(recommendations, (item) => item.category).map((group) => (
+            <View key={group.key} style={{ gap: spacing.xs }}>
+              <CategoryHeader categoryKey={group.key} label={group.label} count={group.items.length} />
+              {group.items.map((item) => (
+                <RecommendationRow key={item.name} item={item} />
+              ))}
+            </View>
           ))}
         </View>
       </View>
@@ -229,6 +242,16 @@ export default function TripDetailScreen({ route, navigation }: Props) {
   );
 }
 
+function CategoryHeader({ categoryKey, label, count }: { categoryKey: string; label: string; count: number }) {
+  return (
+    <View style={styles.categoryHeader}>
+      <MaterialCommunityIcons name={categoryIconName(categoryKey)} size={14} color={colors.green} />
+      <Text style={styles.categoryLabel}>{label}</Text>
+      <Text style={styles.categoryCount}>{count}</Text>
+    </View>
+  );
+}
+
 const styles = {
   resultBanner: {
     backgroundColor: colors.paleGreen,
@@ -237,4 +260,18 @@ const styles = {
   },
   link: { color: colors.green, fontFamily: fonts.semiBold, fontSize: 14, marginTop: spacing.sm },
   recommendedHint: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted, marginTop: 2 },
+  categoryHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    marginTop: spacing.xs,
+  },
+  categoryLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.green,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.4,
+  },
+  categoryCount: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
 };
