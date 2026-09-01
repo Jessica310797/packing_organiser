@@ -3,7 +3,12 @@ import type { User } from "../api/types";
 import { getMe, login as apiLogin, setAuthToken, setUnauthorizedHandler, signup as apiSignup } from "../api/client";
 import { deleteSecureItem, getSecureItem, setSecureItem } from "./secureStorage";
 
-const TOKEN_KEY = "pakka:authToken";
+// expo-secure-store keys must be alphanumeric plus "." "-" "_" only (no
+// colon) -- stricter than AsyncStorage, which is what the old "pakka:..."
+// naming convention was written for. This only surfaces on a real device
+// (the web fallback via localStorage has no such restriction), which is
+// why it wasn't caught in web-only testing.
+const TOKEN_KEY = "pakka.authToken";
 
 type AuthStatus = "loading" | "signedOut" | "signedIn";
 
