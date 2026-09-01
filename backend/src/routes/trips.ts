@@ -1,43 +1,14 @@
 import { Router } from "express";
-import multer from "multer";
 import path from "node:path";
 import fs from "node:fs";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { InventoryService } from "../inventory/inventoryService.js";
 import type { SupportedImageMediaType } from "../vision/visionAnalyzer.js";
+import { photoUpload as upload } from "../upload.js";
 import { getTripWeather } from "../weather/weatherService.js";
 import { getDestinationPhoto } from "../photos/destinationPhotoService.js";
 import { getPackingRecommendations } from "../recommendations/recommendationService.js";
 import { requireAuth } from "../auth/middleware.js";
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), "data", "uploads");
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const SUPPORTED_MEDIA_TYPES: SupportedImageMediaType[] = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-];
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: UPLOAD_DIR,
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname) || ".jpg";
-      cb(null, `${randomUUID()}${ext}`);
-    },
-  }),
-  limits: { fileSize: 15 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (SUPPORTED_MEDIA_TYPES.includes(file.mimetype as SupportedImageMediaType)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`Unsupported image type: ${file.mimetype}`));
-    }
-  },
-});
 
 const createTripSchema = z.object({
   destination: z.string().trim().min(1),

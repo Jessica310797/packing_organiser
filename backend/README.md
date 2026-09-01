@@ -124,6 +124,7 @@ reasonable MVP simplification, not a finished auth system.
 | `POST /review/:candidateId/resolve` | Resolve one: `{action: "confirm_match", itemId}` \| `{action: "confirm_new"}` \| `{action: "discard"}` |
 | `GET /wardrobe` / `POST /wardrobe` | List / manually add to the user's general wardrobe (independent of any trip) |
 | `PATCH /wardrobe/:itemId` / `DELETE /wardrobe/:itemId` | Correct / remove a wardrobe item |
+| `POST /wardrobe/photos` | Detect items in a photo and add each one not already owned (`multipart/form-data`, field `photo`) — returns `{added, duplicateCount}` |
 | `GET /packing-lists` | List the user's reusable packing lists |
 | `POST /packing-lists` | Create a list (`category`: `travel_type` \| `destination` \| `activity`, `name`) — auto-prefilled with starter items when the name matches a known template; returns `{list, items}` |
 | `GET /packing-lists/:id` | Fetch one list with its items — returns `{list, items}` |
@@ -147,11 +148,22 @@ calls (`openMeteoClient.ts`) obviously need real internet access to verify.
 ## Wardrobe
 
 A second, trip-independent inventory: what the user owns in general (their
-closet), manually maintained via the endpoints above. It's deliberately not
+closet), maintained manually or by photo. It's deliberately not
 auto-populated from trip inventories yet — that's the natural seed for
 future packing recommendations (comparing what's in the wardrobe against
 what a new trip's purpose/activities suggest), but the recommendation logic
 itself isn't built.
+
+**Adding items from a photo** (`POST /wardrobe/photos`, `src/wardrobe/wardrobeService.ts`)
+reuses the same `VisionAnalyzer` the trip-packing photo flow uses, but with
+much simpler reconciliation: a detection is added unless it exactly matches
+an existing wardrobe item by normalized name, in which case it's silently
+skipped (returned in `duplicateCount`, not merged or quantity-bumped). There's
+no LLM tier and no review queue here, unlike the trip pipeline — there's no
+photo *sequence* to reconcile against, so the ambiguity that machinery exists
+for doesn't come up; a missed duplicate is a low-stakes, easily-corrected
+mistake. The photo itself is transient: read into the vision call, then
+deleted, never stored or served (wardrobe items have no `photoUrl`).
 
 ## Packing lists
 

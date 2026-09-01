@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/authContext";
 import { updateMyName } from "../api/client";
 import { colors, formStyles, radius, spacing, textStyles } from "../theme";
 
 export default function ProfileScreen() {
   const { user, refreshUser, signOut } = useAuth();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState(user?.name ?? "");
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.xl }]}>
       <View style={styles.avatar}>
         <Feather name="user" size={28} color={colors.ink} />
       </View>
@@ -58,7 +60,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, alignItems: "center", padding: spacing.lg, paddingTop: 80, gap: spacing.sm },
+  container: { flex: 1, backgroundColor: colors.bg, alignItems: "center", padding: spacing.lg, gap: spacing.sm },
   avatar: {
     width: 72,
     height: 72,

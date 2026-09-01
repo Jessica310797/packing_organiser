@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import type { TripsStackParamList } from "../navigation/types";
 import type { Trip } from "../api/types";
@@ -54,6 +55,7 @@ async function loadTripMeta(trip: Trip): Promise<TripWithMeta> {
 
 export default function HomeScreen({ navigation }: Props) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [current, setCurrent] = useState<TripWithMeta[] | null>(null);
   const [past, setPast] = useState<TripWithMeta[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +78,10 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={{ backgroundColor: colors.bg }}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.lg }]}
+    >
       <View style={styles.header}>
         <Text style={textStyles.wordmark}>PAKKA</Text>
         <Pressable style={styles.avatar} onPress={() => navigation.getParent()?.navigate("ProfileTab" as never)}>

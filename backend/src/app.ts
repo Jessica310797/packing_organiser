@@ -29,7 +29,7 @@ export function createApp(visionAnalyzer: VisionAnalyzer, llmMatcher: LLMMatcher
   // routes/trips.ts) since <Image> can't attach an Authorization header
   // cross-platform (React Native web renders it as a plain <img>).
   app.use(createTripsRouter(service));
-  app.use(createWardrobeRouter());
+  app.use(createWardrobeRouter(visionAnalyzer));
   app.use(createPackingListsRouter());
   app.use(express.static(PUBLIC_DIR));
 

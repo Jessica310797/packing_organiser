@@ -69,6 +69,11 @@ export interface WardrobeItem {
   updatedAt: string;
 }
 
+export interface WardrobePhotoResult {
+  added: WardrobeItem[];
+  duplicateCount: number;
+}
+
 export interface IngestPhotoResult {
   photo: Photo;
   matchedCount: number;

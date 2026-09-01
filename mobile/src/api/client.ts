@@ -12,6 +12,7 @@ import type {
   Trip,
   User,
   WardrobeItem,
+  WardrobePhotoResult,
 } from "./types";
 
 // Set with a `.env` file (see `.env.example`) — must point at wherever the
@@ -208,6 +209,24 @@ export const editWardrobeItem = (
 
 export const removeWardrobeItem = (itemId: string) =>
   request<void>(`/wardrobe/${itemId}`, { method: "DELETE" });
+
+export async function uploadWardrobePhoto(photo: PickedPhoto): Promise<WardrobePhotoResult> {
+  const form = new FormData();
+  const filename = photo.fileName ?? "photo.jpg";
+
+  if (Platform.OS === "web") {
+    const blob = await (await fetch(photo.uri)).blob();
+    form.append("photo", blob, filename);
+  } else {
+    form.append("photo", {
+      uri: photo.uri,
+      name: filename,
+      type: photo.mimeType ?? "image/jpeg",
+    } as unknown as Blob);
+  }
+
+  return request<WardrobePhotoResult>("/wardrobe/photos", { method: "POST", body: form });
+}
 
 // --- packing lists (reusable, grouped by travel type / destination / activity) ---
 
