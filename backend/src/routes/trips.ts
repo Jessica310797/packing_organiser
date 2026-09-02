@@ -24,12 +24,14 @@ const addItemSchema = z.object({
   name: z.string().trim().min(1),
   category: z.string().trim().min(1).nullable().optional(),
   quantity: z.number().int().positive().default(1),
+  packed: z.boolean().default(true),
 });
 
 const editItemSchema = z.object({
   name: z.string().trim().min(1).optional(),
   category: z.string().trim().min(1).nullable().optional(),
   quantity: z.number().int().positive().optional(),
+  packed: z.boolean().optional(),
 });
 
 const resolveReviewSchema = z
@@ -78,10 +80,11 @@ export function createTripsRouter(service: InventoryService): Router {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.flatten() });
     }
-    const item = service.addManualItem(trip.id, {
+    const item = service.addManualItem(trip.id, req.userId as string, {
       name: parsed.data.name,
       category: parsed.data.category ?? null,
       quantity: parsed.data.quantity,
+      packed: parsed.data.packed,
     });
     res.status(201).json(item);
   });

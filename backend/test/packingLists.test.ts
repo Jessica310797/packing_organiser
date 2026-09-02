@@ -10,6 +10,7 @@ process.env.DATABASE_PATH = dbPath;
 const authService = await import("../src/auth/authService.js");
 const repo = await import("../src/packingLists/repository.js");
 const { findStarterItems } = await import("../src/recommendations/packingTemplates.js");
+const { suggestionsFor } = await import("../src/routes/packingLists.js");
 
 after(() => {
   for (const suffix of ["", "-wal", "-shm"]) {
@@ -80,6 +81,35 @@ describe("packing lists ownership isolation", () => {
 
     repo.deletePackingList(listA.id, userB.id);
     assert.ok(repo.getPackingList(listA.id, userA.id), "userB's no-op delete must not affect userA's list");
+  });
+});
+
+describe("live suggestions for an existing list", () => {
+  test("suggests starter items not yet on the list", () => {
+    const suggestions = suggestionsFor("activity", "Hiking", []);
+    assert.ok(suggestions.some((s) => s.name === "Hiking boots"));
+  });
+
+  test("excludes an item already on the list, by normalized name", () => {
+    const existing = [
+      {
+        id: "item-1",
+        listId: "list-1",
+        name: "hiking boots",
+        category: "footwear",
+        quantity: 1,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ];
+    const suggestions = suggestionsFor("activity", "Hiking", existing);
+    assert.ok(!suggestions.some((s) => s.name === "Hiking boots"));
+    // Everything else Hiking recommends is still worth suggesting.
+    assert.ok(suggestions.length > 0);
+  });
+
+  test("a custom list name with no template match has no suggestions", () => {
+    assert.deepEqual(suggestionsFor("activity", "Not A Real Activity", []), []);
   });
 });
 

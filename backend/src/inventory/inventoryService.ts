@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import * as repo from "./repository.js";
 import { reconcileDetections, type LLMMatcher } from "./reconciler.js";
+import { ensureWardrobeItem } from "../wardrobe/repository.js";
 import type { PhotoInput, VisionAnalyzer } from "../vision/visionAnalyzer.js";
 import type { InventoryItem, Photo, ReviewCandidate, Trip } from "../types.js";
 
@@ -109,6 +110,9 @@ export class InventoryService {
           confidence: detection.confidence,
           matchMethod: "new",
         });
+        // A photo-detected item is genuinely owned -- passively build up the
+        // wardrobe from what gets packed, same as any other new item.
+        ensureWardrobeItem(userId, detection.name, detection.category, detection.quantity);
       }
 
       const reviewCandidates: ReviewCandidate[] = [];
@@ -141,8 +145,12 @@ export class InventoryService {
     }
   }
 
-  addManualItem(tripId: string, input: { name: string; category: string | null; quantity: number }): InventoryItem {
-    return repo.insertItem({
+  addManualItem(
+    tripId: string,
+    userId: string,
+    input: { name: string; category: string | null; quantity: number; packed?: boolean },
+  ): InventoryItem {
+    const item = repo.insertItem({
       id: randomUUID(),
       tripId,
       name: input.name,
@@ -150,7 +158,10 @@ export class InventoryService {
       quantity: input.quantity,
       confidence: null,
       source: "manual",
+      packed: input.packed,
     });
+    ensureWardrobeItem(userId, input.name, input.category, input.quantity);
+    return item;
   }
 
   /** tripId must be the caller's already-ownership-verified trip -- undefined if the item isn't actually in it. */
@@ -216,6 +227,7 @@ export class InventoryService {
         confidence: candidate.confidence,
         matchMethod: "manual",
       });
+      ensureWardrobeItem(userId, candidate.detectedName, candidate.detectedCategory, 1);
     }
     // "discard": nothing to persist beyond marking the candidate resolved.
 

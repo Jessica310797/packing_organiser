@@ -5,6 +5,7 @@ import type {
   PackingList,
   PackingListCategory,
   PackingListItem,
+  PackingListSuggestion,
   Photo,
   RecommendedItem,
   ReviewCandidate,
@@ -141,13 +142,13 @@ export interface AddItemInput {
   quantity: number;
 }
 
-export const addManualItem = (tripId: string, input: AddItemInput) =>
+export const addManualItem = (tripId: string, input: AddItemInput & { packed?: boolean }) =>
   request<InventoryItem>(`/trips/${tripId}/inventory`, json("POST", input));
 
 export const editItem = (
   tripId: string,
   itemId: string,
-  patch: Partial<{ name: string; category: string | null; quantity: number }>,
+  patch: Partial<{ name: string; category: string | null; quantity: number; packed: boolean }>,
 ) => request<InventoryItem>(`/trips/${tripId}/inventory/${itemId}`, json("PATCH", patch));
 
 export const removeItem = (tripId: string, itemId: string) =>
@@ -233,6 +234,7 @@ export async function uploadWardrobePhoto(photo: PickedPhoto): Promise<WardrobeP
 export interface PackingListWithItems {
   list: PackingList;
   items: PackingListItem[];
+  suggestions?: PackingListSuggestion[];
 }
 
 export const listPackingLists = () => request<PackingList[]>("/packing-lists");

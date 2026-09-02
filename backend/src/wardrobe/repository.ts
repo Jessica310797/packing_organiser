@@ -95,6 +95,21 @@ export function updateWardrobeItem(
   return getWardrobeItem(id, userId);
 }
 
+/**
+ * Adds a wardrobe item only if the user doesn't already own one with this
+ * (normalized) name -- used to passively build up the wardrobe from what a
+ * user packs for trips, without ever creating duplicate entries for the
+ * same physical item packed on multiple trips.
+ */
+export function ensureWardrobeItem(userId: string, name: string, category: string | null, quantity: number): void {
+  const key = normalizeName(name);
+  const existing = db
+    .prepare(`SELECT 1 FROM wardrobe_items WHERE user_id = ? AND normalized_name = ? AND status = 'active'`)
+    .get(userId, key);
+  if (existing) return;
+  addWardrobeItem(userId, { name, category, quantity });
+}
+
 export function removeWardrobeItem(id: string, userId: string): void {
   db.prepare(`UPDATE wardrobe_items SET status = 'removed', updated_at = ? WHERE id = ? AND user_id = ?`).run(
     new Date().toISOString(),

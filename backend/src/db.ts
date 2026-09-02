@@ -51,6 +51,9 @@ db.exec(`
     confidence REAL,
     status TEXT NOT NULL DEFAULT 'active',
     source TEXT NOT NULL,
+    -- Whether this item is actually packed yet, vs. just on the list to
+    -- pack -- see the "packed vs to-pack" distinction in inventoryService.
+    packed INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -144,6 +147,14 @@ if (!tripColumns.some((c) => c.name === "user_id")) {
 // exist, whether from this ALTER or from the original CREATE TABLE) --
 // IF NOT EXISTS makes this safe to repeat on every startup.
 db.exec("CREATE INDEX IF NOT EXISTS idx_trips_user ON trips(user_id)");
+
+const inventoryItemColumns = db.prepare("PRAGMA table_info(inventory_items)").all() as { name: string }[];
+if (!inventoryItemColumns.some((c) => c.name === "packed")) {
+  // Existing rows predate the packed/to-pack distinction -- treat them as
+  // already packed (the only state that existed before), not as newly
+  // "to pack", so nothing already-packed visually regresses on upgrade.
+  db.exec("ALTER TABLE inventory_items ADD COLUMN packed INTEGER NOT NULL DEFAULT 1");
+}
 
 const wardrobeColumns = db.prepare("PRAGMA table_info(wardrobe_items)").all() as { name: string }[];
 if (!wardrobeColumns.some((c) => c.name === "user_id")) {

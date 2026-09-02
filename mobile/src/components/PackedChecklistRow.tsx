@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { InventoryItem } from "../api/types";
+import { apiUrl } from "../api/client";
 import { categoryIconName } from "../lib/categoryIcon";
 import { colors, fonts, radius, spacing, textStyles } from "../theme";
 
@@ -13,18 +14,22 @@ export interface PackedItemPatch {
 }
 
 /**
- * A packed item's row: a filled checkmark toggle (tap to un-pack -- removes
- * the item, the obvious inverse of a suggestion's "pack it" tap) plus an
- * inline edit affordance so a generic recommendation someone confirmed can
- * be renamed/re-quantified into what they actually own.
+ * A real (persisted) item's row -- used for both the "Packed" and "To Pack"
+ * sections, distinguished by `item.packed`. The checkbox toggles between
+ * the two (never deletes); the trash icon in the expanded/edit view is the
+ * only way to actually remove the item. Tapping the row opens edit mode,
+ * which also shows the item's real photo when it has one (e.g. detected
+ * from a packing photo) rather than just a generic category icon.
  */
 export function PackedChecklistRow({
   item,
-  onUnpack,
+  onTogglePacked,
+  onDelete,
   onSave,
 }: {
   item: InventoryItem;
-  onUnpack: () => void;
+  onTogglePacked: (packed: boolean) => Promise<void> | void;
+  onDelete: () => void;
   onSave: (patch: PackedItemPatch) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
@@ -54,13 +59,24 @@ export function PackedChecklistRow({
   if (editing) {
     return (
       <View style={styles.editCard}>
-        <TextInput style={styles.editInput} value={name} onChangeText={setName} placeholder="Item name" />
-        <TextInput
-          style={styles.editInput}
-          value={category}
-          onChangeText={setCategory}
-          placeholder="Category (optional)"
-        />
+        <View style={styles.editHeaderRow}>
+          {item.photoUrl ? (
+            <Image source={{ uri: apiUrl(item.photoUrl) }} style={styles.photo} resizeMode="cover" />
+          ) : (
+            <View style={[styles.photo, styles.photoPlaceholder]}>
+              <MaterialCommunityIcons name={categoryIconName(item.category)} size={22} color={colors.green} />
+            </View>
+          )}
+          <View style={{ flex: 1, gap: spacing.xs }}>
+            <TextInput style={styles.editInput} value={name} onChangeText={setName} placeholder="Item name" />
+            <TextInput
+              style={styles.editInput}
+              value={category}
+              onChangeText={setCategory}
+              placeholder="Category (optional)"
+            />
+          </View>
+        </View>
         <View style={styles.editRow}>
           <View style={styles.stepper}>
             <Pressable style={styles.stepperBtn} onPress={() => setQuantity((q) => Math.max(1, q - 1))}>
@@ -75,7 +91,7 @@ export function PackedChecklistRow({
           <Pressable style={styles.textBtn} onPress={() => setEditing(false)}>
             <Text style={styles.textBtnLabel}>Cancel</Text>
           </Pressable>
-          <Pressable style={styles.textBtn} onPress={onUnpack}>
+          <Pressable style={styles.textBtn} onPress={onDelete}>
             <Feather name="trash-2" size={14} color={colors.danger} />
           </Pressable>
           <Pressable style={styles.saveBtn} onPress={save} disabled={saving}>
@@ -90,14 +106,18 @@ export function PackedChecklistRow({
     <View style={styles.row}>
       <Pressable
         style={styles.check}
-        onPress={onUnpack}
+        onPress={() => onTogglePacked(!item.packed)}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: true }}
-        accessibilityLabel={`Mark ${item.name} as not packed`}
+        accessibilityState={{ checked: item.packed }}
+        accessibilityLabel={item.packed ? `Mark ${item.name} as not packed` : `Mark ${item.name} as packed`}
       >
-        <View style={styles.checkFilled}>
-          <Feather name="check" size={13} color="#fff" />
-        </View>
+        {item.packed ? (
+          <View style={styles.checkFilled}>
+            <Feather name="check" size={13} color="#fff" />
+          </View>
+        ) : (
+          <View style={styles.checkOutline} />
+        )}
       </Pressable>
       <Pressable style={styles.body} onPress={startEdit}>
         <MaterialCommunityIcons name={categoryIconName(item.category)} size={15} color={colors.muted} />
@@ -132,6 +152,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  checkOutline: {
+    width: 20,
+    height: 20,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: colors.beigeDark,
+  },
   body: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
   qty: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted },
   editCard: {
@@ -142,6 +169,9 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     gap: spacing.sm,
   },
+  editHeaderRow: { flexDirection: "row", gap: spacing.sm },
+  photo: { width: 52, height: 52, borderRadius: radius.sm, backgroundColor: colors.paleGreen },
+  photoPlaceholder: { alignItems: "center", justifyContent: "center" },
   editInput: {
     borderWidth: 1,
     borderColor: colors.border,

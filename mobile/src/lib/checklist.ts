@@ -2,12 +2,17 @@ import type { InventoryItem, RecommendedItem } from "../api/types";
 import { groupByCategory, type CategoryGroup } from "./categoryGroups";
 
 export interface ChecklistModel {
-  /** Real packed items, grouped by category -- excludes anything still fully/partially
+  /** Actually-packed items, grouped by category -- excludes anything still fully/partially
    * represented by an unfinished suggestion below, so nothing renders twice. */
   packedGroups: CategoryGroup<InventoryItem>[];
+  /** Real items on the list but not yet packed -- always shown here regardless of
+   * whether they also happen to match a suggestion, since they need to stay
+   * directly editable/removable rather than hidden behind an aggregate card. */
+  toPackGroups: CategoryGroup<InventoryItem>[];
   /** Recommendations not yet fully packed, flat (not grouped), missing before partial. */
   suggestions: RecommendedItem[];
   packedCount: number;
+  toPackCount: number;
   totalPacked: number;
   totalRecommended: number;
 }
@@ -15,10 +20,12 @@ export interface ChecklistModel {
 const STATUS_RANK: Record<RecommendedItem["status"], number> = { missing: 0, partial: 1, packed: 2 };
 
 /**
- * Merges real inventory with AI recommendations into one checklist: a
- * recommendation that's fully packed is represented only by its real item(s)
- * in the packed list (never a second "packed" card), while anything still
- * missing or partial shows once as an actionable suggestion instead.
+ * Merges real inventory with AI recommendations into one checklist. Real
+ * items split into "packed" and "to pack" (see InventoryItem.packed) --
+ * un-packing something moves it between these, it never just vanishes. A
+ * recommendation that's fully packed is represented only by its real
+ * item(s) in the packed list (never a second "packed" card); anything
+ * still missing or partial shows once as an actionable suggestion.
  */
 export function buildChecklist(inventory: InventoryItem[], recommendations: RecommendedItem[]): ChecklistModel {
   const stillNeededItemIds = new Set<string>();
@@ -28,8 +35,11 @@ export function buildChecklist(inventory: InventoryItem[], recommendations: Reco
     }
   }
 
-  const visiblePacked = inventory.filter((item) => !stillNeededItemIds.has(item.id));
-  const packedGroups = groupByCategory(visiblePacked, (item) => item.category);
+  const packedOnly = inventory.filter((item) => item.packed && !stillNeededItemIds.has(item.id));
+  const toPackOnly = inventory.filter((item) => !item.packed);
+
+  const packedGroups = groupByCategory(packedOnly, (item) => item.category);
+  const toPackGroups = groupByCategory(toPackOnly, (item) => item.category);
 
   const suggestions = recommendations
     .filter((r) => r.status !== "packed")
@@ -41,5 +51,13 @@ export function buildChecklist(inventory: InventoryItem[], recommendations: Reco
   const totalRecommended = recommendations.reduce((sum, r) => sum + r.recommendedQuantity, 0);
   const totalPacked = recommendations.reduce((sum, r) => sum + Math.min(r.packedQuantity, r.recommendedQuantity), 0);
 
-  return { packedGroups, suggestions, packedCount: visiblePacked.length, totalPacked, totalRecommended };
+  return {
+    packedGroups,
+    toPackGroups,
+    suggestions,
+    packedCount: packedOnly.length,
+    toPackCount: toPackOnly.length,
+    totalPacked,
+    totalRecommended,
+  };
 }

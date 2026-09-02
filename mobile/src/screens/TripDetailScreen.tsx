@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ParamListBase } from "@react-navigation/native";
@@ -52,6 +52,7 @@ export default function TripDetailScreen({ route, navigation }: Props) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("");
+  const [newPacked, setNewPacked] = useState(true);
 
   const refreshRecommendations = useCallback(() => {
     return getRecommendations(tripId).then(setRecommendations).catch(() => {});
@@ -113,8 +114,15 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     await handlePicked(result);
   }
 
-  /** Un-packs a real item -- the obvious inverse of packing it. */
-  async function unpackItem(item: InventoryItem) {
+  /** Moves a real item between "packed" and "to pack" -- it stays, it never just vanishes. */
+  async function togglePacked(item: InventoryItem, packed: boolean) {
+    const updated = await editItem(tripId, item.id, { packed });
+    setInventory((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+    await refreshRecommendations();
+  }
+
+  /** Genuinely removes an item -- only reachable from the edit view's trash icon, never the checkbox. */
+  async function deleteItem(item: InventoryItem) {
     await removeItem(tripId, item.id);
     setInventory((prev) => prev.filter((i) => i.id !== item.id));
     await refreshRecommendations();
@@ -132,10 +140,12 @@ export default function TripDetailScreen({ route, navigation }: Props) {
       name: newName.trim(),
       category: newCategory.trim() || null,
       quantity: 1,
+      packed: newPacked,
     });
     setInventory((prev) => [...prev, item]);
     setNewName("");
     setNewCategory("");
+    setNewPacked(true);
     setShowAddForm(false);
     refreshRecommendations();
   }
@@ -196,7 +206,7 @@ export default function TripDetailScreen({ route, navigation }: Props) {
         <Text style={textStyles.title}>✓ Packed ({checklist.packedCount})</Text>
         <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
           {checklist.packedGroups.length === 0 && (
-            <Text style={textStyles.muted}>Nothing packed yet -- upload a photo or add manually.</Text>
+            <Text style={textStyles.muted}>Nothing packed yet -- upload a photo or tick something off below.</Text>
           )}
           {checklist.packedGroups.map((group) => (
             <View key={group.key} style={{ gap: spacing.xs }}>
@@ -205,7 +215,32 @@ export default function TripDetailScreen({ route, navigation }: Props) {
                 <PackedChecklistRow
                   key={item.id}
                   item={item}
-                  onUnpack={() => unpackItem(item)}
+                  onTogglePacked={(packed) => togglePacked(item, packed)}
+                  onDelete={() => deleteItem(item)}
+                  onSave={(patch) => saveItemEdit(item, patch)}
+                />
+              ))}
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View>
+        <Text style={textStyles.title}>📝 To Pack ({checklist.toPackCount})</Text>
+        <Text style={styles.recommendedHint}>Real items you've decided to bring, just not packed yet.</Text>
+        <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
+          {checklist.toPackGroups.length === 0 && (
+            <Text style={textStyles.muted}>Nothing on the list yet.</Text>
+          )}
+          {checklist.toPackGroups.map((group) => (
+            <View key={group.key} style={{ gap: spacing.xs }}>
+              <CategoryHeader categoryKey={group.key} label={group.label} count={group.items.length} />
+              {group.items.map((item) => (
+                <PackedChecklistRow
+                  key={item.id}
+                  item={item}
+                  onTogglePacked={(packed) => togglePacked(item, packed)}
+                  onDelete={() => deleteItem(item)}
                   onSave={(patch) => saveItemEdit(item, patch)}
                 />
               ))}
@@ -231,6 +266,24 @@ export default function TripDetailScreen({ route, navigation }: Props) {
               value={newCategory}
               onChangeText={setNewCategory}
             />
+            <View style={styles.packedToggleRow}>
+              <Pressable
+                style={[styles.packedToggleBtn, newPacked && styles.packedToggleBtnActive]}
+                onPress={() => setNewPacked(true)}
+              >
+                <Text style={[styles.packedToggleLabel, newPacked && styles.packedToggleLabelActive]}>
+                  Already packed
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.packedToggleBtn, !newPacked && styles.packedToggleBtnActive]}
+                onPress={() => setNewPacked(false)}
+              >
+                <Text style={[styles.packedToggleLabel, !newPacked && styles.packedToggleLabelActive]}>
+                  Still to pack
+                </Text>
+              </Pressable>
+            </View>
             <PrimaryButton label="Add item" onPress={submitManualAdd} />
           </View>
         )}
@@ -308,4 +361,16 @@ const styles = {
     letterSpacing: 0.4,
   },
   categoryCount: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
+  packedToggleRow: { flexDirection: "row" as const, gap: spacing.sm },
+  packedToggleBtn: {
+    flex: 1,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 9,
+    alignItems: "center" as const,
+  },
+  packedToggleBtnActive: { backgroundColor: colors.paleGreen, borderColor: colors.green },
+  packedToggleLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  packedToggleLabelActive: { color: colors.green, fontFamily: fonts.semiBold },
 };

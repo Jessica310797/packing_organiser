@@ -70,6 +70,7 @@ interface InventoryItemRow {
   confidence: number | null;
   status: InventoryItem["status"];
   source: ItemSource;
+  packed: number;
   created_at: string;
   updated_at: string;
 }
@@ -98,6 +99,7 @@ function itemFromRow(row: InventoryItemRow): InventoryItem {
     confidence: row.confidence,
     status: row.status,
     source: row.source,
+    packed: Boolean(row.packed),
     photoUrl: photoId ? `/trips/${row.trip_id}/photos/${photoId}/file` : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -240,6 +242,8 @@ export interface InsertItemInput {
   quantity: number;
   confidence: number | null;
   source: ItemSource;
+  /** Defaults to true (packed) -- every existing call site means "this is genuinely packed" except manual add, which lets the caller add something as still-to-pack. */
+  packed?: boolean;
 }
 
 export function insertItem(input: InsertItemInput): InventoryItem {
@@ -254,15 +258,16 @@ export function insertItem(input: InsertItemInput): InventoryItem {
     confidence: input.confidence,
     status: "active",
     source: input.source,
+    packed: input.packed ?? true,
     photoUrl: null, // no observation exists yet at insert time -- see itemFromRow for the read path
     createdAt: now,
     updatedAt: now,
   };
   db.prepare(
     `INSERT INTO inventory_items
-       (id, trip_id, name, normalized_name, category, quantity, confidence, status, source, created_at, updated_at)
-     VALUES (@id, @tripId, @name, @normalizedName, @category, @quantity, @confidence, @status, @source, @createdAt, @updatedAt)`,
-  ).run(item);
+       (id, trip_id, name, normalized_name, category, quantity, confidence, status, source, packed, created_at, updated_at)
+     VALUES (@id, @tripId, @name, @normalizedName, @category, @quantity, @confidence, @status, @source, @packed, @createdAt, @updatedAt)`,
+  ).run({ ...item, packed: item.packed ? 1 : 0 });
   return item;
 }
 
@@ -270,6 +275,7 @@ export interface UpdateItemPatch {
   name?: string;
   category?: string | null;
   quantity?: number;
+  packed?: boolean;
 }
 
 export function updateItem(id: string, patch: UpdateItemPatch): InventoryItem | undefined {
@@ -279,12 +285,13 @@ export function updateItem(id: string, patch: UpdateItemPatch): InventoryItem | 
   const name = patch.name ?? existing.name;
   const category = patch.category !== undefined ? normalizeCategory(patch.category) : existing.category;
   const quantity = patch.quantity ?? existing.quantity;
+  const packed = patch.packed ?? existing.packed;
 
   db.prepare(
     `UPDATE inventory_items
-     SET name = ?, normalized_name = ?, category = ?, quantity = ?, source = 'manual', updated_at = ?
+     SET name = ?, normalized_name = ?, category = ?, quantity = ?, packed = ?, source = 'manual', updated_at = ?
      WHERE id = ?`,
-  ).run(name, normalizeName(name), category, quantity, new Date().toISOString(), id);
+  ).run(name, normalizeName(name), category, quantity, packed ? 1 : 0, new Date().toISOString(), id);
 
   return getItem(id);
 }

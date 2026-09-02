@@ -2,8 +2,21 @@ import { Router } from "express";
 import { z } from "zod";
 import * as repo from "../packingLists/repository.js";
 import { findStarterItems } from "../recommendations/packingTemplates.js";
+import { normalizeName } from "../normalize.js";
 import { requireAuth } from "../auth/middleware.js";
-import type { PackingListCategory } from "../types.js";
+import type { PackingListCategory, PackingListItem } from "../types.js";
+
+/** Starter-template items not already on the list, by normalized name -- what's still worth suggesting. */
+export function suggestionsFor(category: PackingListCategory, name: string, existingItems: PackingListItem[]) {
+  const existingNames = new Set(existingItems.map((item) => normalizeName(item.name)));
+  return findStarterItems(category, name)
+    .filter((template) => !existingNames.has(normalizeName(template.name)))
+    .map((template) => ({
+      name: template.name,
+      category: template.category,
+      quantity: template.quantity ?? 1,
+    }));
+}
 
 const CATEGORIES: [PackingListCategory, ...PackingListCategory[]] = ["travel_type", "destination", "activity"];
 
@@ -63,7 +76,8 @@ export function createPackingListsRouter(): Router {
   router.get("/packing-lists/:listId", requireAuth, (req, res) => {
     const list = repo.getPackingList(req.params.listId as string, req.userId as string);
     if (!list) return res.status(404).json({ error: "List not found" });
-    res.json({ list, items: repo.listPackingListItems(list.id) });
+    const items = repo.listPackingListItems(list.id);
+    res.json({ list, items, suggestions: suggestionsFor(list.category, list.name, items) });
   });
 
   router.patch("/packing-lists/:listId", requireAuth, (req, res) => {

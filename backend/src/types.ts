@@ -41,6 +41,8 @@ export interface InventoryItem {
   confidence: number | null;
   status: ItemStatus;
   source: ItemSource;
+  /** Whether this item is actually packed, vs. still just on the list to pack. */
+  packed: boolean;
   /** Relative API path to the most recent photo this item was actually detected in, or null (manual items). */
   photoUrl: string | null;
   createdAt: string;

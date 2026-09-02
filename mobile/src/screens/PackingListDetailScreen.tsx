@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PackStackParamList } from "../navigation/types";
-import type { PackingList, PackingListItem } from "../api/types";
+import type { PackingList, PackingListItem, PackingListSuggestion } from "../api/types";
 import {
   addPackingListItem,
   deletePackingList,
@@ -15,7 +15,7 @@ import {
 } from "../api/client";
 import { PackingListItemRow } from "../components/PackingListItemRow";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { colors, formStyles, spacing, textStyles } from "../theme";
+import { colors, fonts, formStyles, radius, spacing, textStyles } from "../theme";
 
 type Props = NativeStackScreenProps<PackStackParamList, "PackingListDetail">;
 
@@ -23,6 +23,7 @@ export default function PackingListDetailScreen({ route, navigation }: Props) {
   const { listId } = route.params;
   const [list, setList] = useState<PackingList | null>(null);
   const [items, setItems] = useState<PackingListItem[] | null>(null);
+  const [suggestions, setSuggestions] = useState<PackingListSuggestion[]>([]);
   const [listName, setListName] = useState(route.params.name);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -31,12 +32,23 @@ export default function PackingListDetailScreen({ route, navigation }: Props) {
     getPackingList(listId).then((res) => {
       setList(res.list);
       setItems(res.items);
+      setSuggestions(res.suggestions ?? []);
       setListName(res.list.name);
       navigation.setOptions({ title: res.list.name });
     });
   }, [listId, navigation]);
 
   useFocusEffect(load);
+
+  async function addSuggestion(suggestion: PackingListSuggestion) {
+    const item = await addPackingListItem(listId, {
+      name: suggestion.name,
+      category: suggestion.category,
+      quantity: suggestion.quantity,
+    });
+    setItems((prev) => [...(prev ?? []), item]);
+    setSuggestions((prev) => prev.filter((s) => s.name !== suggestion.name));
+  }
 
   async function saveListName() {
     const trimmed = listName.trim();
@@ -48,8 +60,10 @@ export default function PackingListDetailScreen({ route, navigation }: Props) {
 
   async function submitAdd() {
     if (!name.trim()) return;
-    const item = await addPackingListItem(listId, { name: name.trim(), category: category.trim() || null, quantity: 1 });
+    const trimmed = name.trim();
+    const item = await addPackingListItem(listId, { name: trimmed, category: category.trim() || null, quantity: 1 });
     setItems((prev) => [...(prev ?? []), item]);
+    setSuggestions((prev) => prev.filter((s) => s.name.toLowerCase() !== trimmed.toLowerCase()));
     setName("");
     setCategory("");
   }
@@ -113,6 +127,27 @@ export default function PackingListDetailScreen({ route, navigation }: Props) {
         <PrimaryButton label="Add item" onPress={submitAdd} />
       </View>
 
+      {suggestions.length > 0 && (
+        <View style={{ gap: spacing.sm }}>
+          <Text style={textStyles.title}>✨ Pakka suggests</Text>
+          <View style={{ gap: spacing.xs }}>
+            {suggestions.map((suggestion) => (
+              <Pressable
+                key={suggestion.name}
+                style={styles.suggestionRow}
+                onPress={() => addSuggestion(suggestion)}
+              >
+                <View style={styles.suggestionPlus}>
+                  <Feather name="plus" size={13} color={colors.green} />
+                </View>
+                <Text style={styles.suggestionName}>{suggestion.name}</Text>
+                <Text style={styles.suggestionCategory}>{suggestion.category}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
       <Pressable onPress={confirmDeleteList} style={styles.deleteRow}>
         <Feather name="trash-2" size={14} color={colors.danger} />
         <Text style={styles.deleteLabel}>Delete this list</Text>
@@ -123,6 +158,29 @@ export default function PackingListDetailScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   empty: { color: colors.muted, fontSize: 14 },
+  suggestionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.sm,
+  },
+  suggestionPlus: {
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: colors.green,
+    backgroundColor: colors.paleGreen,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  suggestionName: { flex: 1, fontFamily: fonts.medium, fontSize: 14.5, color: colors.ink },
+  suggestionCategory: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
   deleteRow: {
     flexDirection: "row",
     alignItems: "center",
