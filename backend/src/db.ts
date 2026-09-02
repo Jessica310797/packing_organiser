@@ -126,6 +126,16 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_packing_list_items_list ON packing_list_items(list_id);
 
+  -- Counts photo-analysis calls (trip + wardrobe) per user per calendar
+  -- month, so the free tier can cap how many paid Claude vision calls one
+  -- account can trigger -- see usage/rateLimiter.ts.
+  CREATE TABLE IF NOT EXISTS photo_scan_usage (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    month TEXT NOT NULL,
+    count INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, month)
+  );
+
 `);
 
 // Lightweight migration for databases created before `purpose` existed.

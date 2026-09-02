@@ -5,6 +5,7 @@ import * as repo from "../wardrobe/repository.js";
 import { WardrobeService } from "../wardrobe/wardrobeService.js";
 import { requireAuth } from "../auth/middleware.js";
 import { photoUpload } from "../upload.js";
+import { PhotoScanLimitExceededError } from "../usage/rateLimiter.js";
 import type { SupportedImageMediaType, VisionAnalyzer } from "../vision/visionAnalyzer.js";
 
 const addItemSchema = z.object({
@@ -66,6 +67,9 @@ export function createWardrobeRouter(visionAnalyzer: VisionAnalyzer): Router {
       });
       res.status(201).json(result);
     } catch (err) {
+      if (err instanceof PhotoScanLimitExceededError) {
+        return res.status(429).json({ error: err.message });
+      }
       res.status(502).json({ error: `Photo analysis failed: ${(err as Error).message}` });
     } finally {
       // Unlike trip photos, wardrobe photos are transient -- used only for

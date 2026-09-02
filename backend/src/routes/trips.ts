@@ -3,6 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { z } from "zod";
 import type { InventoryService } from "../inventory/inventoryService.js";
+import { PhotoScanLimitExceededError } from "../usage/rateLimiter.js";
 import type { SupportedImageMediaType } from "../vision/visionAnalyzer.js";
 import { photoUpload as upload } from "../upload.js";
 import { getTripWeather } from "../weather/weatherService.js";
@@ -188,6 +189,9 @@ export function createTripsRouter(service: InventoryService): Router {
       });
       res.status(201).json(result);
     } catch (err) {
+      if (err instanceof PhotoScanLimitExceededError) {
+        return res.status(429).json({ error: err.message });
+      }
       res.status(502).json({ error: `Photo analysis failed: ${(err as Error).message}` });
     }
   });

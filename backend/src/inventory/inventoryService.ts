@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import * as repo from "./repository.js";
 import { reconcileDetections, type LLMMatcher } from "./reconciler.js";
 import { ensureWardrobeItem } from "../wardrobe/repository.js";
+import { consumePhotoScan } from "../usage/rateLimiter.js";
 import type { PhotoInput, VisionAnalyzer } from "../vision/visionAnalyzer.js";
 import type { InventoryItem, Photo, ReviewCandidate, Trip } from "../types.js";
 
@@ -70,6 +71,7 @@ export class InventoryService {
     const trip = repo.getTrip(tripId, userId);
     if (!trip) throw new Error(`Trip not found: ${tripId}`);
 
+    consumePhotoScan(userId);
     const photo = repo.createPhoto(tripId, filePath);
 
     try {

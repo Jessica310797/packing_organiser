@@ -1,7 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { DetectedItem } from "../types.js";
 
-const MODEL = process.env.ANTHROPIC_VISION_MODEL ?? "claude-sonnet-5";
+// Haiku 4.5 is roughly half Sonnet 5's per-token price and is plenty capable
+// for "what items are in this photo" -- the reconciliation tier (which does
+// harder same-item-or-not reasoning) stays on Sonnet 5, see llmMatcher.ts.
+const MODEL = process.env.ANTHROPIC_VISION_MODEL ?? "claude-haiku-4-5";
 
 export type SupportedImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 

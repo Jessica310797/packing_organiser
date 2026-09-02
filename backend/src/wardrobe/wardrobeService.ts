@@ -1,4 +1,5 @@
 import { normalizeName } from "../normalize.js";
+import { consumePhotoScan } from "../usage/rateLimiter.js";
 import type { PhotoInput, VisionAnalyzer } from "../vision/visionAnalyzer.js";
 import type { WardrobeItem } from "../types.js";
 import * as repo from "./repository.js";
@@ -20,6 +21,7 @@ export class WardrobeService {
    * correcting quantities is left to the manual edit controls.
    */
   async ingestPhoto(userId: string, photo: PhotoInput): Promise<WardrobePhotoResult> {
+    consumePhotoScan(userId);
     const detections = await this.visionAnalyzer.analyzePhoto(photo);
     const knownNames = new Set(repo.listActiveWardrobeItems(userId).map((item) => item.normalizedName));
 
