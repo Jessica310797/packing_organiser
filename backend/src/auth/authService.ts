@@ -1,4 +1,6 @@
+import fs from "node:fs";
 import * as userRepo from "./userRepository.js";
+import * as tripRepo from "../inventory/repository.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import { signToken } from "./tokens.js";
 import type { User } from "../types.js";
@@ -40,4 +42,27 @@ export async function login(email: string, password: string): Promise<AuthResult
 
   const { passwordHash: _passwordHash, ...user } = row;
   return { user, token: signToken({ userId: user.id }) };
+}
+
+/**
+ * Permanently deletes a user and everything they own: trips (and their
+ * photos/inventory/review candidates), wardrobe items, and packing lists.
+ * The DB rows cascade automatically via ON DELETE CASCADE; the uploaded
+ * photo files on disk don't, so those are collected before the user row
+ * is removed and unlinked afterward (best-effort -- a file already gone
+ * isn't an error).
+ */
+export function deleteAccount(userId: string): void {
+  const photoFilePaths = tripRepo.listAllPhotoFilePathsForUser(userId);
+  userRepo.deleteUser(userId);
+  for (const filePath of photoFilePaths) {
+    // Synchronous and best-effort: account deletion is rare enough that
+    // blocking briefly is fine, and a file already gone isn't an error --
+    // just nothing left to clean up.
+    try {
+      fs.unlinkSync(filePath);
+    } catch {
+      // already gone, fine
+    }
+  }
 }

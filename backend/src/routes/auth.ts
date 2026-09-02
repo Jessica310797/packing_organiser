@@ -70,5 +70,10 @@ export function createAuthRouter(): Router {
     res.json(user);
   });
 
+  router.delete("/auth/me", requireAuth, (req, res) => {
+    authService.deleteAccount(req.userId as string);
+    res.status(204).send();
+  });
+
   return router;
 }

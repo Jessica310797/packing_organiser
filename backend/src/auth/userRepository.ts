@@ -38,3 +38,8 @@ export function updateUserName(id: string, name: string): User | undefined {
   db.prepare(`UPDATE users SET name = ? WHERE id = ?`).run(name, id);
   return getUserById(id);
 }
+
+/** Deletes the user row -- every owned trip/wardrobe/packing-list row (and everything under them) cascades via ON DELETE CASCADE. Doesn't touch files on disk; see authService.deleteAccount for that. */
+export function deleteUser(id: string): void {
+  db.prepare(`DELETE FROM users WHERE id = ?`).run(id);
+}

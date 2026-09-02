@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/authContext";
-import { updateMyName } from "../api/client";
+import { deleteMyAccount, updateMyName } from "../api/client";
 import { colors, formStyles, radius, spacing, textStyles } from "../theme";
 
 export default function ProfileScreen() {
   const { user, refreshUser, signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState(user?.name ?? "");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setName(user?.name ?? "");
@@ -31,6 +32,30 @@ export default function ProfileScreen() {
       { text: "Cancel", style: "cancel" },
       { text: "Log out", style: "destructive", onPress: () => signOut() },
     ]);
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      "Delete your account?",
+      "This permanently deletes your account, every trip, your wardrobe, and your packing lists. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete everything",
+          style: "destructive",
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteMyAccount();
+              await signOut();
+            } catch (err) {
+              Alert.alert("Couldn't delete account", (err as Error).message);
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
   }
 
   return (
@@ -55,6 +80,14 @@ export default function ProfileScreen() {
       <Text style={styles.logout} onPress={handleSignOut}>
         Log out
       </Text>
+
+      {deleting ? (
+        <ActivityIndicator color={colors.danger} style={{ marginTop: spacing.lg }} />
+      ) : (
+        <Text style={styles.deleteAccount} onPress={handleDeleteAccount}>
+          Delete account
+        </Text>
+      )}
     </View>
   );
 }
@@ -73,4 +106,5 @@ const styles = StyleSheet.create({
   email: { ...textStyles.muted },
   field: { width: "100%", marginTop: spacing.lg },
   logout: { ...textStyles.body, color: colors.danger, marginTop: spacing.xl },
+  deleteAccount: { ...textStyles.muted, fontSize: 12.5, marginTop: spacing.lg },
 });

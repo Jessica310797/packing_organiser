@@ -96,6 +96,8 @@ export const getMe = () => request<User>("/auth/me");
 
 export const updateMyName = (name: string) => request<User>("/auth/me", json("PATCH", { name }));
 
+export const deleteMyAccount = () => request<void>("/auth/me", { method: "DELETE" });
+
 // --- trips ---------------------------------------------------------------
 
 export interface CreateTripInput {

@@ -211,6 +211,19 @@ export function getPhoto(id: string): Photo | undefined {
   return row ? photoFromRow(row) : undefined;
 }
 
+/** All uploaded photo files across every trip this user owns -- used to clean up disk files on account deletion (the DB rows cascade automatically; the files on disk don't). */
+export function listAllPhotoFilePathsForUser(userId: string): string[] {
+  const rows = db
+    .prepare(
+      `SELECT photos.file_path AS file_path
+       FROM photos
+       JOIN trips ON trips.id = photos.trip_id
+       WHERE trips.user_id = ?`,
+    )
+    .all(userId) as { file_path: string }[];
+  return rows.map((row) => row.file_path);
+}
+
 export function listPhotos(tripId: string): Photo[] {
   const rows = db
     .prepare(`SELECT * FROM photos WHERE trip_id = ? ORDER BY sequence_number ASC`)
