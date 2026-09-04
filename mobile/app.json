@@ -23,7 +23,11 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -37,6 +41,11 @@
           "cameraPermission": "Used to take photos of items as you pack your suitcase."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "941d5af3-8ee4-4634-9239-94ae87aa6f77"
+      }
+    }
   }
 }
