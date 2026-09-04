@@ -1,0 +1,23 @@
+/** Specific planned activities -- kept in sync with backend/public's checkboxes. */
+export const ACTIVITY_OPTIONS: string[] = [
+  "Hiking",
+  "Swimming",
+  "Watersports",
+  "Camping",
+  "Skiing / Snowboarding",
+  "Cycling",
+  "Diving / Snorkeling",
+  "Fishing",
+  "Golf",
+  "Running",
+  "Climbing",
+  "Sightseeing",
+  "Museums / Culture",
+  "Nightlife",
+  "Shopping",
+  "Spa / Wellness",
+  "Food Tours",
+  "Wildlife / Safari",
+  "Photography",
+  "Business Meetings",
+];

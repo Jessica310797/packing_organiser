@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Packing Organiser",
+    "slug": "packing-organiser",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to take photos of items as you pack your suitcase.",
+        "NSPhotoLibraryUsageDescription": "Used to select existing photos of your packed items."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Used to select existing photos of your packed items.",
+          "cameraPermission": "Used to take photos of items as you pack your suitcase."
+        }
+      ]
+    ]
+  }
+}

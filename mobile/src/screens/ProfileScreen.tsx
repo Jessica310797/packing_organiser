@@ -1,0 +1,110 @@
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "../lib/authContext";
+import { deleteMyAccount, updateMyName } from "../api/client";
+import { colors, formStyles, radius, spacing, textStyles } from "../theme";
+
+export default function ProfileScreen() {
+  const { user, refreshUser, signOut } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [name, setName] = useState(user?.name ?? "");
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setName(user?.name ?? "");
+  }, [user?.name]);
+
+  async function saveName() {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === user?.name) return;
+    try {
+      const updated = await updateMyName(trimmed);
+      refreshUser(updated);
+    } catch (err) {
+      Alert.alert("Couldn't save name", (err as Error).message);
+    }
+  }
+
+  function handleSignOut() {
+    Alert.alert("Log out?", undefined, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Log out", style: "destructive", onPress: () => signOut() },
+    ]);
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      "Delete your account?",
+      "This permanently deletes your account, every trip, your wardrobe, and your packing lists. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete everything",
+          style: "destructive",
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteMyAccount();
+              await signOut();
+            } catch (err) {
+              Alert.alert("Couldn't delete account", (err as Error).message);
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top + spacing.xl }]}>
+      <View style={styles.avatar}>
+        <Feather name="user" size={28} color={colors.ink} />
+      </View>
+      <Text style={textStyles.title}>Profile</Text>
+      {user && <Text style={styles.email}>{user.email}</Text>}
+
+      <View style={styles.field}>
+        <Text style={textStyles.label}>Your name</Text>
+        <TextInput
+          style={formStyles.input}
+          value={name}
+          onChangeText={setName}
+          onBlur={saveName}
+          placeholder="e.g. Jess"
+        />
+      </View>
+
+      <Text style={styles.logout} onPress={handleSignOut}>
+        Log out
+      </Text>
+
+      {deleting ? (
+        <ActivityIndicator color={colors.danger} style={{ marginTop: spacing.lg }} />
+      ) : (
+        <Text style={styles.deleteAccount} onPress={handleDeleteAccount}>
+          Delete account
+        </Text>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg, alignItems: "center", padding: spacing.lg, gap: spacing.sm },
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.pill,
+    backgroundColor: colors.beige,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  email: { ...textStyles.muted },
+  field: { width: "100%", marginTop: spacing.lg },
+  logout: { ...textStyles.body, color: colors.danger, marginTop: spacing.xl },
+  deleteAccount: { ...textStyles.muted, fontSize: 12.5, marginTop: spacing.lg },
+});

@@ -1,0 +1,88 @@
+# Packing Organiser — mobile (Expo)
+
+The real mobile app: create a trip, take/pick packing photos with your
+phone's camera, and watch the same backend (`../backend`) build up a
+deduplicated inventory. Same API, same reconciliation logic as the web
+version in `backend/public` — this is the actual product interface.
+
+## Prerequisites
+
+- The backend (`../backend`) running and reachable from your phone (see
+  below — this is the part that trips people up)
+- **Expo Go** installed on your phone: [iOS](https://apps.apple.com/app/expo-go/id982107779) / [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env
+```
+
+Edit `.env` and set `EXPO_PUBLIC_API_URL` to a URL your **phone** can reach
+— see `.env.example` for the different cases (Codespaces, local network,
+simulators). `localhost` only works if the app itself is running in a
+browser on the same machine as the backend — it does **not** work from a
+physical phone or from Expo Go.
+
+### If you're running the backend in a GitHub Codespace
+
+1. Start the backend (`cd ../backend && npm run dev`)
+2. In the **Ports** tab (bottom panel), find port 3000, right-click → **Port
+   Visibility** → **Public** (it defaults to Private/GitHub-auth-only, which
+   Expo Go on your phone can't get through)
+3. Copy that port's forwarded URL (looks like
+   `https://your-codespace-name-3000.app.github.dev`) into `.env` as
+   `EXPO_PUBLIC_API_URL`
+
+```bash
+npm start
+```
+
+If your terminal and your phone aren't reachable on the same local network
+(true for Codespaces, and for most cloud dev environments), use
+`npm start -- --tunnel` instead — this routes through Expo's relay so it
+works regardless of network setup. The first run will offer to install
+`@expo/ngrok`; accept it.
+
+This prints a QR code. Scan it with Expo Go (Android: in-app scanner; iOS:
+your regular Camera app, then tap the notification). The app opens on your
+phone, live-reloading as you edit code.
+
+**Version note:** this project targets Expo SDK 54, deliberately kept a
+version or two behind the newest SDK. Expo Go's app-store build lags the
+latest SDK release by some margin — often a single version — so pinning
+here avoids a "you need a newer version of Expo Go" error that even a
+freshly-installed Expo Go can hit. If this project is ever upgraded to a
+newer SDK, confirm Expo Go's app-store build actually supports it first
+(check the version note on https://expo.dev/go), or use `eas build` for
+your own custom dev client instead of Expo Go.
+
+## What's here
+
+- `App.tsx` — bottom tab navigator: **Trips** (dashboard → new trip → trip
+  detail), **Wardrobe** (a general, trip-independent closet you can log
+  purchases into), **Pack** (jump straight into packing a trip in
+  progress), **Profile** (placeholder)
+- `src/theme.ts` — the design tokens (cream background, serif display font
+  loaded via `@expo-google-fonts/playfair-display`, black pill buttons) used
+  across every screen
+- `src/api/client.ts` — typed client for the backend's REST API
+- `src/screens/` — one per tab/step; `HomeScreen` is the main dashboard
+- `src/components/` — shared UI: inventory/wardrobe/review rows, pickers,
+  trip cover image
+
+Camera and photo-library permissions are requested at the point you tap
+**Take photo** / **Choose photo**, not on launch.
+
+The Home dashboard's "items packed" count is real, but there's no fake
+packing-progress percentage or weather — those would need a trip
+requirements/target feature and a weather API respectively, neither of
+which exist yet. A trip's cover thumbnail is its own first uploaded packing
+photo when one exists, not stock photography.
+
+## Known gap
+
+There's no native iOS/Android build here yet (no Xcode/EAS project) — this
+runs through Expo Go for development. Producing an installable
+`.ipa`/`.apk`, or a Play Store/App Store submission, is a separate step
+(via `eas build`) once the app itself is further along.
