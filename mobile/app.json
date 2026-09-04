@@ -1,19 +1,21 @@
 {
   "expo": {
-    "name": "Packing Organiser",
-    "slug": "packing-organiser",
+    "name": "Pakka",
+    "slug": "pakka",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.jessicaculnane.pakka",
       "infoPlist": {
         "NSCameraUsageDescription": "Used to take photos of items as you pack your suitcase.",
         "NSPhotoLibraryUsageDescription": "Used to select existing photos of your packed items."
       }
     },
     "android": {
+      "package": "com.jessicaculnane.pakka",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
