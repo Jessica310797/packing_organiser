@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.jessicaculnane.pakka",
       "infoPlist": {
         "NSCameraUsageDescription": "Used to take photos of items as you pack your suitcase.",
-        "NSPhotoLibraryUsageDescription": "Used to select existing photos of your packed items."
+        "NSPhotoLibraryUsageDescription": "Used to select existing photos of your packed items.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -24,6 +25,9 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.RECORD_AUDIO"
@@ -46,6 +50,12 @@
       "eas": {
         "projectId": "941d5af3-8ee4-4634-9239-94ae87aa6f77"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/941d5af3-8ee4-4634-9239-94ae87aa6f77"
     }
   }
 }
