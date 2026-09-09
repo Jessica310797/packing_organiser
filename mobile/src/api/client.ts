@@ -56,7 +56,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const url = `${API_BASE_URL}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, headers });
+  } catch (err) {
+    // A bare "Network request failed" gives no way to tell a bad API_BASE_URL
+    // apart from a real connectivity issue -- surface what was actually
+    // attempted and the underlying cause instead.
+    throw new Error(`Network error calling ${url}: ${(err as Error).message}`);
+  }
   const contentType = res.headers.get("content-type") ?? "";
   const body = contentType.includes("application/json") ? await res.json() : undefined;
 
