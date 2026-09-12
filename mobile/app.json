@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.jessicaculnane.pakka",
       "infoPlist": {
         "NSCameraUsageDescription": "Used to take photos of items as you pack your suitcase.",
