@@ -7,17 +7,18 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.jessicaculnane.pakka",
       "infoPlist": {
         "NSCameraUsageDescription": "Used to take photos of items as you pack your suitcase.",
-        "NSPhotoLibraryUsageDescription": "Used to select existing photos of your packed items."
+        "NSPhotoLibraryUsageDescription": "Used to select existing photos of your packed items.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.jessicaculnane.pakka",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FAF9F6",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -46,6 +47,12 @@
       "eas": {
         "projectId": "941d5af3-8ee4-4634-9239-94ae87aa6f77"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/941d5af3-8ee4-4634-9239-94ae87aa6f77"
     }
   }
 }
