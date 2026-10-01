@@ -139,6 +139,11 @@ export const ACTIVITY_ITEMS: Record<string, ItemTemplate[]> = {
     { name: "Swimwear", category: "Clothing", quantity: 1 },
     { name: "Flip-flops", category: "Footwear", quantity: 1 },
   ],
+  "Wine Tasting": [
+    { name: "Comfortable walking shoes", category: "Footwear", quantity: 1 },
+    { name: "Reusable wine carrier or tote", category: "Essentials", quantity: 1 },
+    { name: "Stain remover wipes", category: "Toiletries", quantity: 1 },
+  ],
   "Wildlife / Safari": [
     { name: "Binoculars", category: "Essentials", quantity: 1 },
     { name: "Insect repellent", category: "Toiletries", quantity: 1 },
