@@ -17,6 +17,7 @@ export const ACTIVITY_OPTIONS: string[] = [
   "Shopping",
   "Spa / Wellness",
   "Food Tours",
+  "Wine Tasting",
   "Wildlife / Safari",
   "Photography",
   "Business Meetings",
