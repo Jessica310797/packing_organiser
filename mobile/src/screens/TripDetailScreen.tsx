@@ -1,9 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { ParamListBase } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
+import Feather from "@expo/vector-icons/Feather";
 import type { TripDetailParams } from "../navigation/types";
 import type { InventoryItem, IngestPhotoResult, RecommendedItem, ReviewCandidate, Trip } from "../api/types";
 import {
@@ -26,8 +37,11 @@ import { PackingProgressBar } from "../components/PackingProgressBar";
 import { TripContextBar } from "../components/TripContextBar";
 import { ReviewRow } from "../components/ReviewRow";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { PhaseTabs, type Phase } from "../components/PhaseTabs";
 import { buildChecklist } from "../lib/checklist";
 import { categoryIconName } from "../lib/categoryIcon";
+import type { CategoryGroup } from "../lib/categoryGroups";
+import { addDays, formatDateWithWeekday } from "../lib/dates";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 // Reachable from both the Trips tab's stack and the Pack tab's stack, so
@@ -41,6 +55,8 @@ type Props = {
 
 export default function TripDetailScreen({ route, navigation }: Props) {
   const { tripId, destination } = route.params;
+  const { width } = useWindowDimensions();
+  const pagerRef = useRef<ScrollView>(null);
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [weather, setWeather] = useState<TripWeather | null>(null);
@@ -53,6 +69,8 @@ export default function TripDetailScreen({ route, navigation }: Props) {
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [newPacked, setNewPacked] = useState(true);
+  const [phase, setPhase] = useState<Phase>("packing");
+  const [showPacked, setShowPacked] = useState(false);
 
   const refreshRecommendations = useCallback(() => {
     return getRecommendations(tripId).then(setRecommendations).catch(() => {});
@@ -73,6 +91,16 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     getTrip(tripId).then(setTrip).catch(() => {});
     getWeather(tripId).then(setWeather).catch(() => {});
   }, [tripId]);
+
+  function goToPhase(next: Phase) {
+    setPhase(next);
+    pagerRef.current?.scrollTo({ x: next === "packing" ? 0 : width, animated: true });
+  }
+
+  function handlePagerScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const page = Math.round(e.nativeEvent.contentOffset.x / width);
+    setPhase(page === 0 ? "packing" : "itinerary");
+  }
 
   async function handlePicked(result: ImagePicker.ImagePickerResult) {
     if (result.canceled || result.assets.length === 0) return;
@@ -112,6 +140,10 @@ export default function TripDetailScreen({ route, navigation }: Props) {
     }
     const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
     await handlePicked(result);
+  }
+
+  function takeVideo() {
+    Alert.alert("Coming soon", "Video analysis is still in testing -- take a photo for now.");
   }
 
   /** Moves a real item between "packed" and "to pack" -- it stays, it never just vanishes. */
@@ -170,162 +202,234 @@ export default function TripDetailScreen({ route, navigation }: Props) {
   }
 
   const checklist = buildChecklist(inventory, recommendations);
+  const toPackNames = checklist.toPackGroups.flatMap((g) => g.items.map((i) => i.name));
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: spacing.md, gap: spacing.lg }}
-      keyboardShouldPersistTaps="handled"
-    >
-      {trip && <TripContextBar trip={trip} weather={weather} />}
-
-      <PackingProgressBar packed={checklist.totalPacked} total={checklist.totalRecommended} />
-
-      <View style={{ gap: spacing.sm }}>
-        <View style={{ flexDirection: "row", gap: spacing.sm }}>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton label="Take photo" icon="camera" onPress={takePhoto} loading={analyzing} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton label="Choose photo" icon="image" onPress={pickFromLibrary} loading={analyzing} />
-          </View>
-        </View>
-
-        {lastResult && (
-          <View style={styles.resultBanner}>
-            <Text style={textStyles.cardTitle}>Photo processed</Text>
-            <Text style={textStyles.muted}>
-              {lastResult.matchedCount} already packed (matched) · {lastResult.addedCount} new
-              {lastResult.ambiguousCount > 0 ? ` · ${lastResult.ambiguousCount} need review` : ""}
-            </Text>
-          </View>
-        )}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.md }}>
+        {trip && <TripContextBar trip={trip} weather={weather} />}
+        <PhaseTabs active={phase} onChange={goToPhase} />
       </View>
 
-      <View>
-        <Text style={textStyles.title}>✓ Packed ({checklist.packedCount})</Text>
-        <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
-          {checklist.packedGroups.length === 0 && (
-            <Text style={textStyles.muted}>Nothing packed yet -- upload a photo or tick something off below.</Text>
-          )}
-          {checklist.packedGroups.map((group) => (
-            <View key={group.key} style={{ gap: spacing.xs }}>
-              <CategoryHeader categoryKey={group.key} label={group.label} count={group.items.length} />
-              {group.items.map((item) => (
-                <PackedChecklistRow
-                  key={item.id}
-                  item={item}
-                  onTogglePacked={(packed) => togglePacked(item, packed)}
-                  onDelete={() => deleteItem(item)}
-                  onSave={(patch) => saveItemEdit(item, patch)}
+      <ScrollView
+        ref={pagerRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handlePagerScrollEnd}
+        style={{ flex: 1, marginTop: spacing.sm }}
+      >
+        <View style={{ width }}>
+          <ScrollView
+            nestedScrollEnabled
+            contentContainerStyle={{ padding: spacing.md, gap: spacing.lg, paddingBottom: spacing.xl }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={{ gap: spacing.sm }}>
+              <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <PrimaryButton label="Take photo" icon="camera" onPress={takePhoto} loading={analyzing} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <PrimaryButton label="Take video" icon="video" onPress={takeVideo} />
+                </View>
+              </View>
+              <Text style={styles.captureHint}>Video analysis is still in testing -- photo works today</Text>
+              <Text style={styles.link} onPress={pickFromLibrary}>
+                Choose from library instead
+              </Text>
+
+              {lastResult && (
+                <View style={styles.resultBanner}>
+                  <Text style={textStyles.cardTitle}>Photo processed</Text>
+                  <Text style={textStyles.muted}>
+                    {lastResult.matchedCount} already packed (matched) · {lastResult.addedCount} new
+                    {lastResult.ambiguousCount > 0 ? ` · ${lastResult.ambiguousCount} need review` : ""}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <PackingProgressBar packed={checklist.totalPacked} total={checklist.totalRecommended} />
+
+            <View style={{ gap: spacing.sm }}>
+              <Pressable style={styles.packedToggle} onPress={() => setShowPacked((s) => !s)}>
+                <View style={styles.packedCheckBadge}>
+                  <Feather name="check" size={12} color="#fff" />
+                </View>
+                <Text style={styles.packedToggleLabel}>Packed · {checklist.packedCount} items</Text>
+                <Feather name={showPacked ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
+              </Pressable>
+              {showPacked && (
+                <View style={{ gap: spacing.md }}>
+                  {checklist.packedGroups.length === 0 && (
+                    <Text style={textStyles.muted}>Nothing packed yet -- upload a photo or tick something off below.</Text>
+                  )}
+                  {checklist.packedGroups.map((group) => (
+                    <CategoryGroupCard
+                      key={group.key}
+                      group={group}
+                      onTogglePacked={togglePacked}
+                      onDelete={deleteItem}
+                      onSave={saveItemEdit}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={{ gap: spacing.sm }}>
+              <Text style={textStyles.title}>To pack ({checklist.toPackCount})</Text>
+              {checklist.toPackGroups.length === 0 && (
+                <Text style={textStyles.muted}>Nothing on the list yet.</Text>
+              )}
+              {checklist.toPackGroups.map((group) => (
+                <CategoryGroupCard
+                  key={group.key}
+                  group={group}
+                  onTogglePacked={togglePacked}
+                  onDelete={deleteItem}
+                  onSave={saveItemEdit}
+                />
+              ))}
+
+              {!showAddForm ? (
+                <Text style={styles.link} onPress={() => setShowAddForm(true)}>
+                  + Add item manually
+                </Text>
+              ) : (
+                <View style={{ gap: spacing.sm }}>
+                  <TextInput
+                    style={formStyles.input}
+                    placeholder="Item name"
+                    value={newName}
+                    onChangeText={setNewName}
+                  />
+                  <TextInput
+                    style={formStyles.input}
+                    placeholder="Category (optional)"
+                    value={newCategory}
+                    onChangeText={setNewCategory}
+                  />
+                  <View style={styles.packedToggleRow}>
+                    <Pressable
+                      style={[styles.packedToggleBtn, newPacked && styles.packedToggleBtnActive]}
+                      onPress={() => setNewPacked(true)}
+                    >
+                      <Text style={[styles.packedToggleBtnLabel, newPacked && styles.packedToggleBtnLabelActive]}>
+                        Already packed
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.packedToggleBtn, !newPacked && styles.packedToggleBtnActive]}
+                      onPress={() => setNewPacked(false)}
+                    >
+                      <Text style={[styles.packedToggleBtnLabel, !newPacked && styles.packedToggleBtnLabelActive]}>
+                        Still to pack
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <PrimaryButton label="Add item" onPress={submitManualAdd} />
+                </View>
+              )}
+            </View>
+
+            <View style={{ gap: spacing.sm }}>
+              <Text style={textStyles.title}>✨ Pakka recommends ({checklist.suggestions.length})</Text>
+              <Text style={styles.recommendedHint}>
+                Based on this trip's purpose, activities, length, and forecast -- pack it as-is, tap the pencil to
+                make it yours, or add it via photo.
+              </Text>
+              {checklist.suggestions.length === 0 && (
+                <Text style={textStyles.muted}>
+                  {checklist.packedCount > 0 ? "Nothing else suggested -- nice work." : "No suggestions yet."}
+                </Text>
+              )}
+              {checklist.suggestions.map((item) => (
+                <SuggestionRow key={item.name} item={item} onPack={packRecommendation} onTakePhoto={takePhoto} />
+              ))}
+            </View>
+
+            <View style={{ gap: spacing.sm }}>
+              <Text style={textStyles.title}>Needs your review ({review.length})</Text>
+              {review.length === 0 && <Text style={textStyles.muted}>Nothing waiting on you.</Text>}
+              {review.map((candidate) => (
+                <ReviewRow
+                  key={candidate.id}
+                  candidate={candidate}
+                  candidateItems={inventory.filter((i) => candidate.candidateItemIds.includes(i.id))}
+                  onConfirmMatch={(itemId) => handleResolve(candidate.id, { action: "confirm_match", itemId })}
+                  onConfirmNew={() => handleResolve(candidate.id, { action: "confirm_new" })}
+                  onDiscard={() => handleResolve(candidate.id, { action: "discard" })}
                 />
               ))}
             </View>
-          ))}
-        </View>
-      </View>
 
-      <View>
-        <Text style={textStyles.title}>📝 To Pack ({checklist.toPackCount})</Text>
-        <Text style={styles.recommendedHint}>Real items you've decided to bring, just not packed yet.</Text>
-        <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
-          {checklist.toPackGroups.length === 0 && (
-            <Text style={textStyles.muted}>Nothing on the list yet.</Text>
-          )}
-          {checklist.toPackGroups.map((group) => (
-            <View key={group.key} style={{ gap: spacing.xs }}>
-              <CategoryHeader categoryKey={group.key} label={group.label} count={group.items.length} />
-              {group.items.map((item) => (
-                <PackedChecklistRow
-                  key={item.id}
-                  item={item}
-                  onTogglePacked={(packed) => togglePacked(item, packed)}
-                  onDelete={() => deleteItem(item)}
-                  onSave={(patch) => saveItemEdit(item, patch)}
-                />
+            <Pressable style={styles.phaseLinkBtn} onPress={() => goToPhase("itinerary")}>
+              <Text style={styles.phaseLinkLabel}>All packed? See your itinerary</Text>
+              <Feather name="chevron-right" size={14} color={colors.green} />
+            </Pressable>
+          </ScrollView>
+        </View>
+
+        <View style={{ width }}>
+          <ScrollView
+            nestedScrollEnabled
+            contentContainerStyle={{ padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl }}
+          >
+            <View>
+              <Text style={textStyles.cardTitleSerif}>Your itinerary</Text>
+              <Text style={styles.recommendedHint}>What you'll use, day by day.</Text>
+            </View>
+
+            {trip &&
+              Array.from({ length: trip.durationDays }, (_, i) => i).map((dayIndex) => (
+                <View key={dayIndex} style={styles.dayCard}>
+                  <View style={styles.dayHeaderRow}>
+                    <View style={styles.dayBadge}>
+                      <Feather name="calendar" size={16} color={colors.green} />
+                    </View>
+                    <View>
+                      <Text style={styles.dayDateLabel}>
+                        {formatDateWithWeekday(addDays(trip.startDate, dayIndex))} · Day {dayIndex + 1}
+                      </Text>
+                      <Text style={textStyles.cardTitle}>
+                        {checklist.totalPacked}/{checklist.totalRecommended} packed overall
+                      </Text>
+                    </View>
+                  </View>
+                  {toPackNames.length > 0 ? (
+                    <Text style={styles.stillToPackText}>
+                      Still to pack: {toPackNames.slice(0, 4).join(", ")}
+                      {toPackNames.length > 4 ? ` +${toPackNames.length - 4} more` : ""}
+                    </Text>
+                  ) : (
+                    <Text style={styles.stillToPackText}>Everything's packed for this trip.</Text>
+                  )}
+                </View>
               ))}
-            </View>
-          ))}
-        </View>
 
-        {!showAddForm ? (
-          <Text style={styles.link} onPress={() => setShowAddForm(true)}>
-            + Add item manually
-          </Text>
-        ) : (
-          <View style={{ marginTop: spacing.sm, gap: spacing.sm }}>
-            <TextInput
-              style={formStyles.input}
-              placeholder="Item name"
-              value={newName}
-              onChangeText={setNewName}
-            />
-            <TextInput
-              style={formStyles.input}
-              placeholder="Category (optional)"
-              value={newCategory}
-              onChangeText={setNewCategory}
-            />
-            <View style={styles.packedToggleRow}>
-              <Pressable
-                style={[styles.packedToggleBtn, newPacked && styles.packedToggleBtnActive]}
-                onPress={() => setNewPacked(true)}
-              >
-                <Text style={[styles.packedToggleLabel, newPacked && styles.packedToggleLabelActive]}>
-                  Already packed
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[styles.packedToggleBtn, !newPacked && styles.packedToggleBtnActive]}
-                onPress={() => setNewPacked(false)}
-              >
-                <Text style={[styles.packedToggleLabel, !newPacked && styles.packedToggleLabelActive]}>
-                  Still to pack
-                </Text>
-              </Pressable>
-            </View>
-            <PrimaryButton label="Add item" onPress={submitManualAdd} />
-          </View>
-        )}
-      </View>
+            {trip && trip.activities.length > 0 && (
+              <View style={{ gap: spacing.sm }}>
+                <Text style={styles.categoryLabel}>Planned activities</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+                  {trip.activities.map((activity) => (
+                    <View key={activity} style={styles.activityChip}>
+                      <Text style={styles.activityChipLabel}>{activity}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
 
-      <View>
-        <Text style={textStyles.title}>✨ Pakka recommends ({checklist.suggestions.length})</Text>
-        <Text style={styles.recommendedHint}>
-          Based on this trip's purpose, activities, length, and forecast -- pack it as-is, tap the pencil to
-          make it yours, or add it via photo.
-        </Text>
-        <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
-          {checklist.suggestions.length === 0 && (
-            <Text style={textStyles.muted}>
-              {checklist.packedCount > 0 ? "Nothing else suggested -- nice work." : "No suggestions yet."}
-            </Text>
-          )}
-          {checklist.suggestions.map((item) => (
-            <SuggestionRow key={item.name} item={item} onPack={packRecommendation} onTakePhoto={takePhoto} />
-          ))}
+            <Pressable style={styles.phaseLinkBtn} onPress={() => goToPhase("packing")}>
+              <Feather name="chevron-left" size={14} color={colors.green} />
+              <Text style={styles.phaseLinkLabel}>Back to packing</Text>
+            </Pressable>
+          </ScrollView>
         </View>
-      </View>
-
-      <View>
-        <Text style={textStyles.title}>Needs your review ({review.length})</Text>
-        <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
-          {review.length === 0 && <Text style={textStyles.muted}>Nothing waiting on you.</Text>}
-          {review.map((candidate) => (
-            <ReviewRow
-              key={candidate.id}
-              candidate={candidate}
-              candidateItems={inventory.filter((i) => candidate.candidateItemIds.includes(i.id))}
-              onConfirmMatch={(itemId) =>
-                handleResolve(candidate.id, { action: "confirm_match", itemId })
-              }
-              onConfirmNew={() => handleResolve(candidate.id, { action: "confirm_new" })}
-              onDiscard={() => handleResolve(candidate.id, { action: "discard" })}
-            />
-          ))}
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -339,19 +443,48 @@ function CategoryHeader({ categoryKey, label, count }: { categoryKey: string; la
   );
 }
 
+function CategoryGroupCard({
+  group,
+  onTogglePacked,
+  onDelete,
+  onSave,
+}: {
+  group: CategoryGroup<InventoryItem>;
+  onTogglePacked: (item: InventoryItem, packed: boolean) => void;
+  onDelete: (item: InventoryItem) => void;
+  onSave: (item: InventoryItem, patch: PackedItemPatch) => Promise<void>;
+}) {
+  return (
+    <View style={styles.categoryCard}>
+      <CategoryHeader categoryKey={group.key} label={group.label} count={group.items.length} />
+      <View style={{ gap: spacing.xs, marginTop: spacing.xs }}>
+        {group.items.map((item) => (
+          <PackedChecklistRow
+            key={item.id}
+            item={item}
+            onTogglePacked={(packed) => onTogglePacked(item, packed)}
+            onDelete={() => onDelete(item)}
+            onSave={(patch) => onSave(item, patch)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const styles = {
   resultBanner: {
     backgroundColor: colors.paleGreen,
     borderRadius: radius.card,
     padding: spacing.md,
   },
-  link: { color: colors.green, fontFamily: fonts.semiBold, fontSize: 14, marginTop: spacing.sm },
+  link: { color: colors.green, fontFamily: fonts.semiBold, fontSize: 14 },
+  captureHint: { fontFamily: fonts.regular, fontSize: 11.5, color: colors.mutedLight, textAlign: "center" as const },
   recommendedHint: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted, marginTop: 2 },
   categoryHeader: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 6,
-    marginTop: spacing.xs,
   },
   categoryLabel: {
     fontFamily: fonts.semiBold,
@@ -361,6 +494,32 @@ const styles = {
     letterSpacing: 0.4,
   },
   categoryCount: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted },
+  categoryCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: spacing.md,
+  },
+  packedToggle: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: spacing.sm,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: spacing.sm,
+  },
+  packedCheckBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    backgroundColor: colors.green,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  packedToggleLabel: { flex: 1, fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink },
   packedToggleRow: { flexDirection: "row" as const, gap: spacing.sm },
   packedToggleBtn: {
     flex: 1,
@@ -371,6 +530,48 @@ const styles = {
     alignItems: "center" as const,
   },
   packedToggleBtnActive: { backgroundColor: colors.paleGreen, borderColor: colors.green },
-  packedToggleLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
-  packedToggleLabelActive: { color: colors.green, fontFamily: fonts.semiBold },
+  packedToggleBtnLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  packedToggleBtnLabelActive: { color: colors.green, fontFamily: fonts.semiBold },
+  phaseLinkBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: 6,
+    paddingVertical: spacing.sm,
+  },
+  phaseLinkLabel: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.green },
+  dayCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.cardLarge,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  dayHeaderRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: spacing.sm },
+  dayBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    backgroundColor: colors.paleGreen,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  dayDateLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    color: colors.muted,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.4,
+  },
+  stillToPackText: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
+  activityChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: colors.card,
+  },
+  activityChipLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
 };
