@@ -6,8 +6,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "backgroundColor": "#FFFCF3",
-    "splash": { "backgroundColor": "#FF562F" },
-    "ios": { "supportsTablet": false },
-    "android": { "edgeToEdgeEnabled": true }
+    "splash": {
+      "backgroundColor": "#FF562F"
+    },
+    "ios": {
+      "supportsTablet": false
+    }
   }
 }

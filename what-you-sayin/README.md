@@ -23,8 +23,10 @@ full-screen web view, so you can play it on your phone through Expo Go.
 3. Scan the QR code it prints. On iPhone, use the Camera app and tap the
    notification. On Android, use the scanner inside Expo Go.
 
-Like `../mobile`, this targets **Expo SDK 54** so the app-store build of
-Expo Go can open it.
+This targets **Expo SDK 58**, the version the app-store Expo Go opens.
+Expo Go only opens one SDK version at a time. If it ever says the project
+is for a different SDK, upgrade with `npm install expo@^<version>` and then
+`npx expo install --fix`.
 
 ## What works in the app
 
