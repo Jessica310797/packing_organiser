@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "What You Sayin",
+    "slug": "what-you-sayin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFFCF3",
+    "splash": { "backgroundColor": "#FF562F" },
+    "ios": { "supportsTablet": false },
+    "android": { "edgeToEdgeEnabled": true }
+  }
+}

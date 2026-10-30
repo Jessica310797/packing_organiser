@@ -1,0 +1,1579 @@
+<title>what you sayin?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rammetto+One&family=Signika:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a one-screen phone app. Every screen is head / body / foot inside the viewport height,
+   built from the brand's five rounded colour tiles. One deliberate look, so no dark variant. */
+:root {
+  --paper: #FFFCF3;
+  --plum: #3B0525;
+  --blue: #004AAD;
+  --cream: #DEE5B1;
+  --orange: #FF562F;
+  --yellow: #FFCD02;
+  --muted: #7B5A6B;
+  --line: #EDE3D3;
+  --white: #FFFFFF;
+  --good: #1E7A45;
+
+  --f-display: "Rammetto One", "Arial Black", Impact, system-ui, sans-serif;
+  --f-body: "Signika", "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+  --r: 20px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { height: 100%; box-sizing: border-box; }
+body {
+  height: 100%; margin: 0; overflow: hidden; display: flex; flex-direction: column;
+  background: var(--paper); color: var(--plum);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.35;
+  -webkit-tap-highlight-color: transparent;
+}
+#app {
+  flex: 1; min-height: 0; width: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+}
+.screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.screen > .head, .screen > .foot { flex: none; display: flex; flex-direction: column; gap: 8px; }
+.screen > .body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; }
+.screen > .body.fit { overflow: hidden; }
+.grow { flex: 1; min-height: 0; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; font-family: var(--f-display); font-weight: 400; text-wrap: balance; letter-spacing: .01em; }
+h2 { font-size: 22px; line-height: 1.1; }
+h3 { font-size: 17px; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.center { text-align: center; }
+
+/* Brand tiles */
+.c-blue   { background: var(--blue);   color: var(--cream); }
+.c-plum   { background: var(--plum);   color: var(--yellow); }
+.c-orange { background: var(--orange); color: var(--cream); }
+.c-yellow { background: var(--yellow); color: var(--plum); }
+.c-cream  { background: var(--cream);  color: var(--plum); }
+.swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.swatches i { height: clamp(12px, 2.6vh, 26px); border-radius: 10px; }
+
+.tile {
+  border: 0; border-radius: var(--r); padding: 12px 14px; text-align: center; min-height: 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 100%;
+}
+.tile .sm { font-weight: 700; font-size: clamp(12px, min(3.8vw, 2.1vh), 17px); letter-spacing: .04em; text-transform: uppercase; }
+.tile .lg { font-family: var(--f-display); font-size: clamp(20px, min(7.2vw, 4.2vh), 36px); line-height: 1.05; text-transform: uppercase; overflow-wrap: anywhere; max-width: 100%; }
+button.tile { transition: transform .12s ease; }
+button.tile:active { transform: scale(.97); }
+
+.wordmark { border-radius: var(--r); padding: clamp(10px, 2vh, 22px) 14px; text-align: center; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+.wordmark .sm { font-weight: 700; font-size: clamp(16px, min(5.5vw, 3vh), 26px); letter-spacing: .03em; }
+.wordmark .lg { font-family: var(--f-display); font-size: clamp(38px, min(16vw, 8.5vh), 88px); line-height: .95; overflow-wrap: anywhere; }
+.logo { display: block; width: 100%; height: auto; max-width: 100%; aspect-ratio: 797 / 247; min-height: 0; }
+.logo-sm { display: block; height: 34px; width: auto; max-width: 100%; }
+.mini-mark { font-family: var(--f-display); font-size: 15px; line-height: 1; text-transform: uppercase; }
+.mini-mark small { display: block; font-family: var(--f-body); font-weight: 700; font-size: 11px; letter-spacing: .08em; }
+
+.filler { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+
+/* Home: the brand board as a menu */
+.home-grid {
+  flex: 1; min-height: 0; display: grid; gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas: "mark mark" "quick quick" "play join";
+}
+
+/* Buttons */
+.btn {
+  border: 0; border-radius: 16px; padding: 13px 18px; font-weight: 700; font-size: 17px;
+  background: var(--plum); color: var(--yellow); letter-spacing: .02em;
+}
+.btn.big { width: 100%; padding: clamp(12px, 2vh, 17px); font-family: var(--f-display); font-size: clamp(18px, 2.8vh, 22px); text-transform: uppercase; }
+.btn.yellow { background: var(--yellow); color: var(--plum); }
+.btn.orange { background: var(--orange); color: var(--cream); }
+.btn.blue { background: var(--blue); color: var(--cream); }
+.btn.cream { background: var(--cream); color: var(--plum); }
+.btn.ghost { background: transparent; color: var(--plum); border: 2px solid var(--plum); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.pair { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.link { border: 0; background: none; padding: 4px 2px; font-weight: 700; color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+.back { border: 0; background: none; font-weight: 700; padding: 4px 0; color: var(--plum); font-size: 16px; }
+.resume { border: 0; border-radius: 14px; padding: 10px 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.resume b { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; }
+
+/* Panels and form bits */
+.panel { background: var(--white); border: 2px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field > span { font-weight: 700; }
+.input { width: 100%; border: 2px solid var(--line); background: var(--paper); border-radius: 14px; padding: 11px 13px; font-size: 16px; }
+textarea.input { resize: none; }
+textarea.input.grow { min-height: 90px; }
+.input:focus { outline: none; border-color: var(--plum); }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { border: 2px solid var(--plum); background: transparent; border-radius: 12px; padding: 7px 12px; font-weight: 700; font-size: 15px; }
+.chip[aria-pressed="true"] { background: var(--plum); color: var(--yellow); }
+.chip:disabled { opacity: .35; }
+.chip small { font-weight: 600; opacity: .7; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+.seg .chip { padding: 8px 4px; text-align: center; }
+.subtabs .chip { border-width: 0; background: var(--cream); }
+.subtabs .chip[aria-pressed="true"] { background: var(--plum); }
+.hint { font-size: 14px; color: var(--muted); }
+.saved-note { font-size: 13px; color: var(--good); font-weight: 700; min-height: 1em; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+.check input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--plum); flex: none; }
+.steps { display: flex; gap: 6px; }
+.steps i { flex: 1; height: 6px; border-radius: 4px; background: var(--line); }
+.steps i.on { background: var(--orange); }
+
+/* Tab bar sits in the layout, not on top of it */
+.tabbar { flex: none; background: var(--plum); padding: 8px max(10px, env(safe-area-inset-right, 0px)) 8px max(10px, env(safe-area-inset-left, 0px)); }
+.tabbar nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tabbar button { border: 0; background: transparent; color: var(--cream); padding: 6px 4px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
+.tabbar button i { width: 20px; height: 12px; border-radius: 4px; background: currentColor; opacity: .5; }
+.tabbar button[aria-current="true"] { color: var(--yellow); }
+.tabbar button[aria-current="true"] i { opacity: 1; }
+
+/* Cards */
+.card3d { position: relative; perspective: 1400px; flex: 1; min-height: 170px; }
+.card3d .inner { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateY(180deg); }
+.card3d.flip .inner { animation: flipin .85s cubic-bezier(.3,.7,.2,1) both; }
+@keyframes flipin { 0%, 40% { transform: rotateY(0); } 100% { transform: rotateY(180deg); } }
+.face { position: absolute; inset: 0; border-radius: 24px; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; padding: 14px 16px; }
+.face.front { align-items: center; justify-content: center; text-align: center; }
+.face.front .sm { font-weight: 700; font-size: 20px; letter-spacing: .06em; text-transform: uppercase; }
+.face.front .lg { font-family: var(--f-display); font-size: clamp(38px, min(13vw, 8vh), 66px); text-transform: uppercase; line-height: 1; }
+.face.back { transform: rotateY(180deg); background: var(--white); border: 10px solid var(--catbg); }
+.face.back .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cat-chip { background: var(--catbg); color: var(--catfg); border-radius: 10px; padding: 4px 10px; font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+.word { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-family: var(--f-display); font-size: clamp(28px, min(10vw, 6.5vh), 52px); line-height: 1.08; overflow-wrap: anywhere; text-wrap: balance; }
+.star { border: 0; background: var(--cream); color: var(--plum); border-radius: 12px; padding: 6px 11px; font-weight: 700; font-size: 14px; }
+.star[aria-pressed="true"] { background: var(--yellow); }
+.card-note { text-align: center; font-weight: 600; color: var(--muted); font-size: 14px; }
+.flat-card { flex: 1; min-height: 150px; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
+.flat-card .lg { font-family: var(--f-display); font-size: clamp(34px, min(12vw, 7vh), 64px); text-transform: uppercase; line-height: 1; overflow-wrap: anywhere; max-width: 100%; }
+.flat-card .sm { font-weight: 700; font-size: 17px; letter-spacing: .05em; text-transform: uppercase; }
+
+[data-cat="object"] { --catbg: var(--blue);   --catfg: var(--cream); }
+[data-cat="person"] { --catbg: var(--yellow); --catfg: var(--plum); }
+[data-cat="place"]  { --catbg: var(--orange); --catfg: var(--cream); }
+[data-cat="world"]  { --catbg: var(--plum);   --catfg: var(--yellow); }
+[data-cat="action"] { --catbg: var(--cream);  --catfg: var(--orange); }
+[data-cat="nature"] { --catbg: var(--cream);  --catfg: var(--blue); }
+[data-cat="random"] { --catbg: var(--yellow); --catfg: var(--blue); }
+.catfill { background: var(--catbg); color: var(--catfg); }
+.face.front[data-cat="random"] { background: repeating-linear-gradient(-45deg, var(--yellow) 0 26px, #FFD54A 26px 52px); }
+
+.card3d.out-got { animation: outGot .3s ease-in forwards; }
+.card3d.out-skip { animation: outSkip .3s ease-in forwards; }
+.card3d.out-bin { animation: outBin .3s ease-in forwards; }
+@keyframes outGot { to { transform: translate(40%, -60%) rotate(18deg) scale(.7); opacity: 0; } }
+@keyframes outSkip { to { transform: translateX(-120%) rotate(-14deg); opacity: 0; } }
+@keyframes outBin { to { transform: translateY(70%) rotate(8deg) scale(.6); opacity: 0; } }
+.stamp {
+  position: absolute; left: 50%; top: 45%; z-index: 3; transform: translate(-50%, -50%) rotate(-12deg);
+  font-family: var(--f-display); font-size: clamp(28px, 9vw, 44px); padding: 6px 16px; border-radius: 14px; white-space: nowrap;
+  animation: stampin .18s ease-out both; pointer-events: none;
+}
+@keyframes stampin { from { transform: translate(-50%, -50%) rotate(-12deg) scale(1.8); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .card3d.flip .inner { animation: none; }
+  .card3d.out-got, .card3d.out-skip, .card3d.out-bin { animation: fadeout .2s forwards; }
+  .stamp { animation: none; }
+}
+@keyframes fadeout { to { opacity: 0; } }
+
+/* Play */
+.play-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.play-head .team { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; border: 0; background: none; padding: 0; }
+.digits { font-family: var(--f-display); font-size: clamp(30px, 5vh, 40px); line-height: 1; font-variant-numeric: tabular-nums; text-align: center; min-width: 2ch; }
+.digits.low { color: var(--orange); }
+.bar { height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--plum); transform-origin: left; }
+.bar.low i { background: var(--orange); }
+.skipped-btn { justify-self: end; border: 0; background: var(--cream); color: var(--plum); border-radius: 12px; padding: 7px 11px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.skipped-btn:disabled { opacity: .45; }
+.controls { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 8px; }
+.controls.two { grid-template-columns: 1fr 1fr; }
+.controls .btn { padding: clamp(14px, 2.6vh, 20px) 6px; font-size: 16px; border-radius: 18px; }
+.controls .btn.correct { font-family: var(--f-display); font-size: 19px; text-transform: uppercase; }
+.score-pill { justify-self: end; background: var(--plum); color: var(--yellow); border-radius: 12px; padding: 6px 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mini-scores { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.mini-scores .ms { flex: none; display: flex; align-items: center; gap: 6px; background: var(--cream); border-radius: 12px; padding: 6px 10px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.mini-scores .ms b { font-family: var(--f-display); font-weight: 400; font-variant-numeric: tabular-nums; }
+.mini-scores .ms.lead { background: var(--plum); color: var(--yellow); }
+
+.sheet-back { position: fixed; inset: 0; background: rgb(58 10 38 / .45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--paper); width: 100%; max-width: 560px; border-radius: 24px 24px 0 0; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); max-height: 80%; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.list li > button, .list li > div {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left;
+  background: var(--white); border: 2px solid var(--line); border-radius: 14px; padding: 9px 12px; font-weight: 600;
+}
+.list .w { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.list .dot { width: 12px; height: 12px; border-radius: 4px; background: var(--catbg); border: 1.5px solid var(--plum); flex: none; }
+.tag { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 8px; padding: 3px 8px; white-space: nowrap; }
+.tag.got { background: var(--good); color: var(--white); }
+.tag.skip { background: var(--cream); color: var(--plum); }
+.tag.bin { background: var(--plum); color: var(--cream); }
+.tag.miss { background: var(--line); color: var(--muted); }
+.x { border: 0; background: var(--line); border-radius: 10px; width: 32px; height: 32px; font-size: 18px; line-height: 1; flex: none; }
+
+.big-num { display: flex; align-items: center; gap: 14px; border-radius: var(--r); padding: 12px 16px; }
+.big-num b { font-family: var(--f-display); font-size: clamp(44px, 8vh, 64px); line-height: 1; font-variant-numeric: tabular-nums; font-weight: 400; }
+.quip { font-family: var(--f-display); font-size: clamp(16px, 2.6vh, 20px); line-height: 1.2; }
+.scoreboard { display: flex; flex-direction: column; gap: 6px; }
+.scoreboard .rowx { display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 9px 12px; }
+.scoreboard .rowx .n { margin-left: auto; font-family: var(--f-display); font-size: 22px; font-variant-numeric: tabular-nums; }
+.scoreboard .rowx .pos { font-family: var(--f-display); font-size: 16px; width: 1.4em; }
+.scoreboard .rowx .nm { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stats .tile { padding: 10px; }
+
+.codebar { border-radius: var(--r); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.codebar .code { font-family: var(--f-display); font-size: clamp(30px, 6vh, 42px); letter-spacing: .14em; line-height: 1; }
+.code-input { font-family: var(--f-display); font-size: 26px; letter-spacing: .25em; text-transform: uppercase; text-align: center; }
+.people { display: flex; flex-wrap: wrap; gap: 6px; }
+.person { background: var(--cream); border-radius: 10px; padding: 4px 10px; font-size: 14px; font-weight: 700; }
+.person.me { background: var(--plum); color: var(--yellow); }
+.pawn { width: 14px; height: 14px; border-radius: 5px; flex: none; border: 1.5px solid var(--plum); }
+.invite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; background: var(--cream); border-radius: 14px; padding: 10px 12px; }
+.wait { border: 2px dashed var(--line); border-radius: var(--r); padding: 18px 14px; text-align: center; color: var(--muted); font-weight: 700; }
+.dots i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin: 0 3px; animation: bob 1s ease-in-out infinite; }
+.dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; } .dots i:nth-child(4) { animation-delay: .45s; } .dots i:nth-child(5) { animation-delay: .6s; }
+@keyframes bob { 50% { transform: translateY(-10px); } }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 30;
+  background: var(--plum); color: var(--yellow); padding: 10px 16px; border-radius: 14px; font-weight: 700; font-size: 15px; max-width: calc(100% - 32px); text-align: center;
+}
+.team-edit { display: grid; grid-template-columns: 14px 1fr auto; gap: 6px 10px; align-items: center; background: var(--white); border: 2px solid var(--line); border-radius: 16px; padding: 8px 10px; }
+.team-edit .input { padding: 8px 10px; }
+.team-edit .players { grid-column: 2 / 4; }
+.fmt { background: var(--cream); border-radius: 12px; padding: 10px; font-size: 13px; }
+</style>
+
+<div id="app"></div>
+<div class="tabbar" id="tabbar" hidden>
+  <nav aria-label="Main">
+    <button data-tab="home"><i></i>Home</button>
+    <button data-tab="me"><i></i>Me</button>
+    <button data-tab="saved"><i></i>Saved</button>
+    <button data-tab="deck"><i></i>Deck</button>
+  </nav>
+</div>
+<div id="sheet-root"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ============ Reference data ============ */
+const CATS = [
+  { id: "object", name: "Object" }, { id: "person", name: "Person" }, { id: "place", name: "Place" },
+  { id: "world", name: "World" }, { id: "action", name: "Action" }, { id: "nature", name: "Nature" }, { id: "random", name: "Random" },
+];
+const CAT_IDS = CATS.map(c => c.id);
+const catName = id => CATS.find(c => c.id === id)?.name || id;
+const LEVELS = [
+  { name: "Light", desc: "Clean enough for your nan." },
+  { name: "Cheeky", desc: "Innuendo, hangovers, terrible dates." },
+  { name: "Unhinged", desc: "Sex, drugs and bad decisions. 18+." },
+  { name: "Sickening", desc: "Bodily fluids. Genuinely vile. 18+." },
+];
+const SETTINGS = [["friends", "Friends"], ["date", "Date"], ["family", "Family"], ["work", "Work"], ["icebreaker", "Ice breaker"], ["wedding", "Wedding"], ["solo", "Solo"]];
+const INTERESTS = [["sport", "Sport"], ["travel", "Travel"], ["music", "Music"], ["food", "Food"], ["geography", "Geography"], ["history", "History"], ["film", "Film & TV"], ["fashion", "Fashion"]];
+const HUMOURS = ["Dry", "Sarcastic", "Dark", "Goofy", "Wholesome", "Stupid"];
+const AGES = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55–64", "65+"];
+const ERA = { "Under 18": "genz", "18–24": "genz", "25–34": "millennial", "35–44": "millennial", "45–54": "genx", "55–64": "boomer", "65+": "boomer" };
+const CITY_GROUPS = {
+  au: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast", "Canberra", "Hobart", "Darwin", "Newcastle"],
+  nz: ["Auckland", "Wellington", "Christchurch", "Queenstown"],
+  uk: ["London", "Manchester", "Birmingham", "Liverpool", "Leeds", "Bristol", "Newcastle upon Tyne", "Glasgow", "Edinburgh", "Cardiff", "Belfast", "Brighton"],
+  ie: ["Dublin", "Cork", "Galway"],
+  us: ["New York", "Los Angeles", "Chicago", "San Francisco", "Miami", "Austin", "Boston", "Seattle", "Nashville", "Las Vegas"],
+  "": ["Toronto", "Vancouver", "Paris", "Berlin", "Amsterdam", "Madrid", "Barcelona", "Lisbon", "Rome", "Milan", "Athens", "Stockholm", "Copenhagen", "Vienna", "Prague", "Zurich", "Dubai", "Singapore", "Hong Kong", "Tokyo", "Seoul", "Bangkok", "Bali", "Manila", "Mumbai", "Delhi", "Cape Town", "Johannesburg", "Lagos", "Nairobi", "Cairo", "Mexico City", "São Paulo", "Rio de Janeiro", "Buenos Aires"],
+};
+const CITY_SLUG = { sydney: "sydney", melbourne: "melbourne", brisbane: "brisbane", london: "london", "new york": "nyc", paris: "paris" };
+const NATIONALITIES = ["Australian", "New Zealander", "British", "English", "Scottish", "Welsh", "Irish", "Northern Irish", "American", "Canadian", "South African", "Indian", "Pakistani", "Sri Lankan", "Chinese", "Filipino", "Vietnamese", "Thai", "Indonesian", "Malaysian", "Korean", "Japanese", "Italian", "Greek", "Lebanese", "Turkish", "French", "German", "Spanish", "Portuguese", "Dutch", "Polish", "Brazilian", "Mexican", "Colombian", "Argentinian", "Nigerian", "Ghanaian", "Kenyan", "Jamaican", "Fijian", "Samoan", "Tongan", "Māori", "Aboriginal and Torres Strait Islander"];
+const NAT_TAG = { australian: "au", "aboriginal and torres strait islander": "au", "new zealander": "nz", "māori": "nz", british: "uk", english: "uk", scottish: "uk", welsh: "uk", "northern irish": "uk", irish: "ie", american: "us" };
+
+/* ============ Card bank ============
+   One line per group: category level [tags] : card, card, card
+   level 0 light, 1 cheeky, 2 unhinged, 3 sickening. Untagged cards suit everyone;
+   tagged cards only show up when someone playing matches a tag (city, culture, age, interest, setting). */
+const BANK_SRC = `
+object 0 : Kettle, Toaster, Doormat, TV remote, Ironing board, Coat hanger, Fridge magnet, Laundry basket, Smoke alarm, Vacuum cleaner, Alarm clock, Clothes peg, Extension cord, Wheelie bin, Tea towel, Hot water bottle, Umbrella, Stapler, Bubble wrap, Sticky note, Shopping trolley, Lava lamp, Rubber duck, Snow globe, Phone charger, Power bank, Air fryer, Robot vacuum, Electric toothbrush, Hair straighteners, Traffic cone, Sleeping bag, Inflatable flamingo, Novelty mug, Scented candle, Self-checkout, Pool noodle, Doorbell camera, Slow cooker, Massage chair
+object 0 food : Colander, Whisk, Rolling pin, Cheese grater, Tin opener, Corkscrew, Pizza cutter, Salad spinner, Ice cube tray, Lunchbox, Tongs, Egg cup, Teapot, Cling wrap, Nutcracker, Garlic press, Chopsticks, Cocktail shaker, Sandwich press, Gravy boat
+object 0 travel : Suitcase, Passport, Boarding pass, Neck pillow, Travel adaptor, Luggage tag, Packing cubes, Eye mask, Earplugs, Bum bag, Snorkel, Phrasebook, Duty-free bag, Luggage scale
+object 0 sport : Tennis racquet, Mouthguard, Yoga mat, Kettlebell, Stopwatch, Rowing machine, Golf buggy, Referee whistle, Swimming cap, Foam roller
+object 0 music : Vinyl record, Tambourine, Bagpipes, Triangle, Cowbell, Karaoke machine, Ukulele, Kazoo, Glow stick, Megaphone
+object 0 film : Popcorn bucket, Clapperboard, 3D glasses, Red carpet, Oscar statue, Lightsaber, Magic wand, Infinity Gauntlet, Ruby slippers
+object 0 fashion : Bucket hat, Crocs, Scrunchie, Tote bag, Platform shoes, Claw clip, Fake tan, Sequin jacket, Cargo pants, Fanny pack
+object 0 work : Lanyard, Swivel chair, Whiteboard marker, Hole punch, Office plant, Ring light, Coffee pod, Desk fan, Standing desk, Name badge
+object 0 genz : Stanley cup, Labubu, Digital camera, Ring light, AirPods, Mini fan
+object 0 millennial : Tamagotchi, Flip phone, Discman, Gel pens, Polaroid camera, iPod, Furby, Slap bracelet, Butterfly clips
+object 0 genx : Walkman, Mixtape, Rubik's cube, VHS tape, Answering machine, Pager, Shoulder pads
+object 0 boomer : Fax machine, Rotary phone, Typewriter, Slide projector, Encyclopaedia, Record player
+object 0 au : Esky, Thongs, Hills Hoist, Akubra, Stubby holder, Vegemite jar, Zinc cream, Ugg boots, Tim Tams
+object 0 uk : Oyster card, Wellies, Meal deal, Brolly, Tea cosy, Pint glass, Hobnob
+object 0 us : Red Solo cup, Mailbox, Letterman jacket, Yellow school bus, Fire hydrant, Lunch tray
+object 0 ie : Pint of Guinness, Hurley, Tayto crisps, Claddagh ring
+object 0 nz : Jandals, Buzzy Bee, Swanndri, L&P bottle
+object 1 : Hangover cure, Breathalyser, Fake ID, Push-up bra, Furry handcuffs, Edible undies, Hip flask, Beer bong, Shot glass, G-string, Hot tub, Whoopee cushion, Love letter, Body glitter, Spanx, Nicotine pouch
+object 1 au : Goon bag
+object 1 date : Massage oil, Rose petals, Dinner candle, Spare toothbrush, Matching pyjamas, Love lock, Mood lighting
+object 2 : Vibrator, Condom, Morning-after pill, Pregnancy test, Nipple tassels, Blow-up doll, Bong, Lube, Sex swing, Burner phone, Ankle monitor, Your ex's hoodie
+object 3 : Butt plug, Haemorrhoid cream, Used tissue, Toenail clippings, Bedpan, Sick bucket, Hairy soap, Sweaty gym sock, Crusty towel, Bin juice
+person 0 : Albert Einstein, Queen Elizabeth II, Shakespeare, Cleopatra, Barack Obama, Leonardo da Vinci, Oprah Winfrey, Charlie Chaplin, David Attenborough, Napoleon, Dolly Parton, Gordon Ramsay, Mr Bean, Harry Potter, Mickey Mouse, Batman, Sherlock Holmes, Shrek, Homer Simpson, Darth Vader, Spider-Man, Paddington Bear, Willy Wonka, Barbie, Kermit the Frog, Santa Claus, Tooth Fairy, James Bond, Winnie the Pooh, Your landlord, A wedding DJ, A tradie, A barista, A lollipop lady, A mime artist, A personal trainer, A fortune teller, A flight attendant, A substitute teacher, A parking inspector
+person 0 sport : Serena Williams, Usain Bolt, Cristiano Ronaldo, Lionel Messi, Michael Jordan, Tiger Woods, Simone Biles, LeBron James, Roger Federer, Muhammad Ali
+person 0 music : Taylor Swift, Beyoncé, Freddie Mercury, Elvis Presley, Lady Gaga, Elton John, Adele, Harry Styles, Ed Sheeran, Rihanna, Billie Eilish, Madonna, Michael Jackson, Dua Lipa, Sabrina Carpenter, Chappell Roan, Bad Bunny
+person 0 film : Margot Robbie, Tom Cruise, Meryl Streep, Zendaya, Keanu Reeves, Ryan Gosling, Pedro Pascal, Jennifer Aniston, Wednesday Addams, Ted Lasso, Gandalf, Jack Sparrow, Forrest Gump, Mrs Doubtfire, Kim Kardashian
+person 0 history : Julius Caesar, Henry VIII, Joan of Arc, Abraham Lincoln, Marie Antoinette, Winston Churchill, Florence Nightingale, Captain Cook, Genghis Khan, Anne Boleyn, Amelia Earhart, Neil Armstrong, Tutankhamun
+person 0 food : Jamie Oliver, Nigella Lawson, Colonel Sanders, Ronald McDonald, Mary Berry, Guy Fieri
+person 0 fashion : Anna Wintour, Coco Chanel, Karl Lagerfeld, Victoria Beckham, Kate Moss
+person 0 au : Steve Irwin, Kylie Minogue, Hugh Jackman, Nicole Kidman, Bindi Irwin, Shane Warne, John Farnham, Dame Edna, Crocodile Dundee, Bluey, Ned Kelly, Cathy Freeman, Ash Barty, The Wiggles
+person 0 uk : King Charles, Prince Harry, David Beckham, Paul Hollywood, The Spice Girls, Wallace and Gromit, Jeremy Clarkson, Simon Cowell
+person 0 us : Dwayne Johnson, Martha Stewart, Judge Judy, Elon Musk, Dr Phil
+person 0 ie : Conor McGregor, Bono, Graham Norton, Father Ted, Saoirse Ronan
+person 0 nz : Lorde, Jacinda Ardern, Taika Waititi, Flight of the Conchords, Richie McCaw
+person 0 genz : MrBeast, Olivia Rodrigo, Timothée Chalamet, Bella Hadid, Ice Spice
+person 0 millennial : Britney Spears, Paris Hilton, Hilary Duff, Justin Timberlake, The Olsen twins, Destiny's Child, Lizzie McGuire
+person 0 genx : Madonna, Kurt Cobain, Jane Fonda, The Fresh Prince
+person 0 boomer : The Beatles, Marilyn Monroe, Frank Sinatra, Audrey Hepburn, John Wayne
+person 0 work : Your boss, The IT guy, HR, The intern, The office gossip, The CEO on a Zoom call
+person 0 family : Your nan, The favourite child, The black sheep, A mum on the school run, A dad at a barbecue
+person 0 wedding : The bride, The best man, The mother of the bride, The flower girl, The celebrant, The ex who RSVP'd yes
+person 1 : Your ex, A drunk uncle, The hot neighbour, A bridezilla, A wine mum, A gym bro, A crypto bro, A gold digger, A sugar daddy, Your celebrity crush, A Tinder date, A cougar, A mansplainer, An influencer, A reality TV villain, A one-night stand, A pick-up artist
+person 1 date : Your first kiss, Your type, A red flag, The one that got away, A situationship, A hopeless romantic, A third wheel
+person 2 : A stripper, A sex therapist, Your ex's new partner, An OnlyFans creator, Hugh Hefner, A swinger, A hitman, A cult leader, A drug dealer, A streaker, A dominatrix, A fuckboy
+person 3 : A proctologist, A man who doesn't wash his hands, Someone clipping toenails on the bus, A serial farter, A mouth-breather on a plane, A nudist at Christmas lunch
+place 0 : The pub, IKEA, The dentist, A car boot sale, The post office, A hospital waiting room, A petrol station, A bus stop, A sauna, A school disco, A launderette, The gym, A roundabout, A rooftop bar, A drive-through, A campsite, A water park, A haunted house, Airport security, A hairdresser, A bowling alley, A library, A casino, A day spa, A bakery, A cinema, A car wash, An escape room, A karaoke booth, A theme park, A lift, The back seat of a taxi, A hotel lobby, A pet shop, A zoo, A supermarket at closing time
+place 0 work : The office kitchen, A Zoom call, The boardroom, The photocopier, A team-building day, The staff room, HR's office, The car park at 5pm
+place 0 family : Grandma's house, The kids' table, The school pick-up line, Parents' evening, A family barbecue, Christmas lunch
+place 0 wedding : The dance floor, The photo booth, The top table, The church aisle, The honeymoon suite
+place 0 date : The back row of the cinema, A candlelit restaurant, A speed-dating night, A rooftop at sunset, A first-date bar
+place 0 sydney : Bondi Beach, Opera House, Harbour Bridge, Manly Ferry, Taronga Zoo, Circular Quay, The Rocks, Darling Harbour, Luna Park, Coogee, Barangaroo, Paddy's Markets, Blue Mountains, Newtown, Surry Hills, Bondi Icebergs, Central Station, Chinatown, Cronulla, Palm Beach, Watsons Bay, Westfield Bondi Junction, The Ivy, Kings Cross
+place 0 melbourne : Flinders Street Station, MCG, Federation Square, Queen Victoria Market, St Kilda Pier, Hosier Lane, Brighton bathing boxes, Fitzroy, Chapel Street, Southbank, Lygon Street, Degraves Street, Puffing Billy, Great Ocean Road, Crown Casino, Brunswick Street, Albert Park, Phillip Island, Flemington, Yarra River, Rod Laver Arena
+place 0 brisbane : South Bank, Story Bridge, Lone Pine Koala Sanctuary, Fortitude Valley, Mount Coot-tha, Queen Street Mall, The Gabba, Suncorp Stadium, West End, Eat Street, Kangaroo Point cliffs, Gold Coast, Dreamworld, Moreton Island, XXXX Brewery, CityCat ferry, New Farm Park
+place 0 london : Big Ben, Tower Bridge, Buckingham Palace, Camden Market, Hyde Park, The Shard, London Eye, Trafalgar Square, Piccadilly Circus, Covent Garden, Borough Market, Notting Hill, Abbey Road, Wembley, The Tube, Oxford Street, Soho, Greenwich, Brick Lane, Shoreditch, Harrods, Clapham Common
+place 0 nyc : Times Square, Central Park, Statue of Liberty, Brooklyn Bridge, Empire State Building, Grand Central, The High Line, Broadway, Coney Island, Wall Street, Fifth Avenue, Madison Square Garden, Staten Island Ferry, The Met, SoHo, Williamsburg, Katz's Deli, JFK Airport, Little Italy
+place 0 paris : Eiffel Tower, The Louvre, Notre-Dame, Arc de Triomphe, Champs-Élysées, Montmartre, Moulin Rouge, The Seine, Versailles, Disneyland Paris, Le Marais, Père Lachaise, Shakespeare and Company, Galeries Lafayette, The Catacombs, Gare du Nord
+place 1 : Nightclub toilets, A hen do, A buck's night, Your ex's street, A beer garden at 3pm, A kebab shop at 3am, A hotel corridor at 2am, A hot tub at a party, The work Christmas party, The back of the bus, The smoking area, A foam party
+place 2 : A strip club, A sex shop, A nudist beach, A dodgy massage parlour, An STI clinic, A swingers' party, A police cell, A crime scene, A love motel
+place 3 : A festival portaloo, A public toilet with no lock, A sewer, A hostel bathroom, A morgue, A fishmonger's bin
+world 0 : Great Wall of China, Machu Picchu, Uluru, Grand Canyon, Niagara Falls, Mount Everest, Sahara, Amazon rainforest, Venice, Santorini, Bali, Tokyo, Iceland, Dubai, Hawaii, Antarctica, Pyramids of Giza, Taj Mahal, Las Vegas, Stonehenge, Great Barrier Reef, Swiss Alps, Rio de Janeiro, Colosseum, Petra, Eiffel Tower, Statue of Liberty, Leaning Tower of Pisa, Mount Fuji, The Dead Sea, Easter Island, Hollywood, Disneyland, The North Pole, The Bermuda Triangle, Mars, The Moon, Atlantis
+world 0 geography : Kazakhstan, Madagascar, Mongolia, Liechtenstein, The Equator, Greenland, Vatican City, Lake Titicaca, The Panama Canal, Mount Kilimanjaro, The Nile, Siberia, Death Valley, The Galápagos, The Andes, Fiji, Luxembourg, Patagonia, The Arctic Circle
+world 0 history : Pompeii, Troy, The Titanic, Chernobyl, The Berlin Wall, Area 51, Alcatraz, The Tower of London, Ancient Rome, Ancient Egypt, The Wild West, Babylon
+world 0 travel : Mykonos, Bangkok, Phuket, Cancún, Amsterdam, Barcelona, Lisbon, Marrakech, Queenstown, Kyoto, Hanoi, Positano, Dubrovnik, New Orleans, Cape Town, Havana, The Maldives
+world 0 sport : Wimbledon, The Olympics, Augusta, Monaco Grand Prix, The Tour de France, Old Trafford, The Super Bowl, The World Cup
+world 0 music : Glastonbury, Coachella, Nashville, Woodstock, Eurovision, Graceland
+world 0 food : Naples, Champagne, Tuscany, Oktoberfest, Tokyo fish market, Hershey
+world 0 film : Hogwarts, Narnia, Gotham City, Jurassic Park, Middle-earth, Springfield, Wakanda, Westeros
+world 0 nz : Hobbiton, Milford Sound, Rotorua, Bay of Islands
+world 0 ie : Cliffs of Moher, Temple Bar, The Blarney Stone, Giant's Causeway
+world 1 : Ibiza, Magaluf, Las Vegas Strip, Schoolies, Spring break in Cancún, Khao San Road, A full moon party, Kavos
+world 2 : Amsterdam's Red Light District, Pattaya, The Playboy Mansion, Fyre Festival, A nudist resort
+world 3 : A cruise ship with norovirus, The Great Pacific Garbage Patch, Glastonbury on day five
+action 0 : Juggling, Sneezing, Parallel parking, Brushing teeth, Skydiving, Knitting, Moonwalking, Whispering, Ironing, Proposing, Hiccuping, Snoring, Surfing, Bungee jumping, Tiptoeing, Sleepwalking, Haggling, Winking, Yawning, Gift wrapping, Busking, Doing a cartwheel, Photobombing, Planking, Assembling IKEA furniture, Doing the worm, Ghosting someone, Humble-bragging, Air guitar, Doing a TikTok dance, Double-dipping, Rage-quitting, Taking a selfie, Speed-walking, Eavesdropping, Sulking, Name-dropping, Overtaking, Oversharing, Pretending to listen
+action 0 sport : Dunking, Penalty shootout, Mexican wave, Diving for a penalty, Bowling a googly, Burpees, Celebrating a goal, Sledging, Lifting the trophy
+action 0 music : Head-banging, Crowd surfing, Lip-syncing, Beatboxing, Conducting an orchestra, Moshing, Doing the Macarena, Murdering karaoke
+action 0 food : Flipping a pancake, Tasting wine, Kneading dough, Licking the bowl, Carving a roast, Stealing a chip, Sending food back
+action 0 travel : Missing a flight, Getting lost, Hitchhiking, Packing at 3am, Overpacking, Reading a map upside down, Fighting over the armrest
+action 0 work : Replying all, Pretending to work, Calling in sick, Quiet quitting, Asking for a raise, Talking on mute, Networking, Clock-watching, Sucking up to the boss
+action 0 date : Holding hands, Meeting the parents, Splitting the bill, Saying I love you first, Getting ghosted, Swiping right
+action 0 family : Teaching Gran to FaceTime, Carving the turkey, Arguing at Christmas, Doing the school run, Pulling a cracker
+action 0 wedding : Catching the bouquet, Cutting the cake, The first dance, Giving the best man speech, Crying in the toilets, Throwing confetti
+action 0 au : Doing a shoey, Chucking a sickie, Throwing another shrimp on the barbie, Pashing
+action 1 : Skinny dipping, Twerking, Flirting, Drunk texting, Sliding into DMs, Stalking an ex on Instagram, Doing a body shot, Streaking, Kissing badly, Slow dancing, Pole dancing, Faking a phone call, Spooning, Netflix and chill, Hooking up, The walk of shame, Laughing at the boss's joke, Getting kicked out of a pub, Shotgunning a beer
+action 2 : Sexting, Sending a nude, Having a threesome, Faking an orgasm, Getting a Brazilian wax, Joining the mile-high club, Dirty talking, Hiding a body, Cheating, Getting arrested, Peeing in a pool, Smoking a joint, Getting a lap dance
+action 3 : Popping a pimple, Picking your nose, Clipping toenails, Farting in a lift, Vomiting in a taxi, Sniffing your armpit, Squeezing a blackhead, Eating a bogey, Pooing at a party, Following through, Wiping with a sock
+nature 0 : Volcano, Rainbow, Waterfall, Thunderstorm, Coral reef, Sunflower, Avalanche, Glacier, Octopus, High tide, Earthquake, Cactus, Hailstorm, Butterfly, Mushroom, Desert, Jellyfish, Full moon, Tornado, Fog, Sloth, Penguin, Flamingo, Hedgehog, Seagull stealing chips, Pigeon, Northern Lights, Solar eclipse, Quicksand, Venus flytrap, Shark, Chameleon, Peacock, Bee sting, Sunburn, Mosquito, Snail, Echo, Blobfish, Naked mole-rat, Sea cucumber
+nature 0 geography : Fjord, Monsoon, Tundra, Savanna, Geyser, Stalactite, Mangrove, Sand dune, River delta
+nature 0 au : Kangaroo, Koala, Platypus, Gum tree, Wombat, Swooping magpie, Drop bear, Cassowary, Huntsman spider, Box jellyfish, Kookaburra, Bin chicken, Quokka, Cane toad, Emu
+nature 0 uk : Robin, Fox in a bin, Badger, Bluebells, Stinging nettles, Drizzle
+nature 0 nz : Kiwi bird, Kea stealing your sandwich, Pōhutukawa, Sheep
+nature 0 ie : Shamrock, Peat bog, Forty shades of green
+nature 1 : Dog humping a leg, Peacock showing off, Cockroach, Stink bug, Horny rabbits
+nature 2 : Praying mantis eating her mate, Duck mating season, A bonobo
+nature 3 : Monkey throwing poo, Seagull poo on your head, Maggots, Dung beetle, Tapeworm, Rotten egg, Cow pat, Blowfly, Dead fish
+random 0 : Birthday cake, Netflix, Bucket list, Group chat, Speeding ticket, Brunch, Selfie, Tax return, Spelling bee, Fire drill, Road trip, Secret Santa, Monday morning, Autocorrect, Dad joke, Pub quiz, Long weekend, Book club, Christmas jumper, Gap year, Out of office, Wi-Fi password, Buffering, Spoiler alert, Midlife crisis, Plot twist, Main character energy, Small talk, Jazz hands, Brain freeze, Déjà vu, Food coma, Free sample, Terms and conditions, Captcha, The ick, Unread emails, Daylight saving
+random 0 genz : Rizz, Delulu, Skibidi toilet, Ate and left no crumbs, NPC, Brain rot, Touch grass, Slay, Aura points
+random 0 millennial : Avocado toast, MSN Messenger, Myspace top 8, Harlem Shake, Ice bucket challenge, Pokémon Go, Gangnam Style, Fidget spinner
+random 0 genx : Dial-up internet, Y2K, Blockbuster video, Jazzercise, Teletext
+random 0 boomer : Party line, Drive-in movie, Milkman, Postcards
+random 0 au : Bunnings sausage sizzle, Democracy sausage, Tall poppy syndrome, Footy tipping, Daylight saving argument, Hottest 100
+random 0 uk : Bank holiday, Love Island, Queue jumping, Boxing Day, Bake Off, Sunday roast, Strictly
+random 0 us : Thanksgiving, Black Friday, Tailgate party, Prom, Super Bowl ad, Fourth of July
+random 0 ie : The craic, St Patrick's Day, Riverdance, Sunday mass
+random 0 nz : The haka, Pavlova debate, Number 8 wire
+random 0 work : Team-building day, Performance review, Casual Friday, Synergy, Circle back, Working from home, Office birthday cake, KPI, Restructure, Per my last email
+random 0 family : Family WhatsApp, Bedtime story, Sibling rivalry, Hand-me-downs, Pocket money, Cracker joke
+random 0 wedding : Something borrowed, Wedding favours, Seating plan drama, Open bar, Plus-one, Gift registry
+random 0 date : First-date nerves, Love language, Red flag, Green flag, Soft launch, Meet-cute
+random 0 icebreaker : Two truths and a lie, Fun fact about me, Guilty pleasure, Desert island, Hidden talent
+random 1 : Hangover, Beer goggles, Booty call, Friends with benefits, Morning breath, Muffin top, Nip slip, Wardrobe malfunction, Thirst trap, Tan lines, Builder's bum, Daddy issues, Wingman, Hall pass, Body count, Love bombing, Breadcrumbing, Sunday scaries
+random 1 dark : Funeral playlist, Reading of the will, Existential dread, Haunted doll, Mortgage stress, Burnout, Your search history
+random 2 : Morning wood, STI, The pull-out method, Dick pic, Love bite, Safe word, Sugar baby, Prenup, Divorce lawyer, Blue balls, Camel toe, Brewer's droop, Kink shaming
+random 3 : Skid marks, Bum sweat, Swamp ass, Shart, Toe jam, Ear wax, Dandruff, Bacne, Projectile vomit, Diarrhoea, Belly button fluff, Morning-after smell
+`;
+function parseBank(src) {
+  const out = [];
+  for (const line of src.split("\n")) {
+    const i = line.indexOf(":"); if (i < 0) continue;
+    const [cat, lvl, ...tags] = line.slice(0, i).trim().split(/\s+/);
+    for (const w of line.slice(i + 1).split(",")) { const t = w.trim(); if (t) out.push({ w: t, cat, lvl: +lvl, tags }); }
+  }
+  return out;
+}
+const BUILT_IN = parseBank(BANK_SRC);
+let IMPORTED = [];       // the owner's spreadsheet bank, shared through the store
+let useBuiltIn = true;
+
+/* ============ Funny copy ============ */
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const STAMPS = {
+  got: [["NAILED IT", "EASY", "GET IN", "BIG BRAIN", "SMOOTH"], ["NAILED IT", "GET IN", "SHOW-OFF", "FILTHY", "SCENES"]],
+  skip: [["NOPE", "NEXT", "MOVING ON", "PASS"], ["BOTTLED IT", "COWARD", "NOPE", "NEXT, LOSER", "SHAMEFUL"]],
+  bin: [["BINNED", "GONE", "TRASH"], ["BINNED", "WHO WROTE THIS", "TRASH", "YEET"]],
+};
+const TURN_QUIPS = [
+  [0, ["Zero. Genuinely impressive.", "Not one. Not a single one.", "Did you two just meet?", "That was painful to watch."]],
+  [3, ["Bit tragic, but we move.", "Small numbers, big feelings.", "Room for improvement. Loads of room."]],
+  [6, ["Respectable. Boring, but respectable.", "Solid. Mid. Fine.", "Your mum would be quietly proud."]],
+  [9, ["Okay, show-offs.", "Calm down, Einstein.", "Someone's been practising."]],
+  [99, ["Are you cheating? You're cheating.", "Someone check their sleeves.", "Absolute filth. Well played."]],
+];
+const turnQuip = n => pick(TURN_QUIPS.find(([max]) => n <= max)[1]);
+const WIN = ["{w} win. Try not to be insufferable about it.", "{w} take it. Everyone else, have a long think.", "{w} won. We're as surprised as you are.", "{w} win. Screenshot it, nobody will believe you."];
+const LOSE = ["{l}: last place, first in our hearts. Not really.", "{l} came last. Someone hug them. Or don't.", "{l}, that was hard to watch.", "{l}, maybe stick to Snap."];
+const TIE = ["A draw. How diplomatic. How boring.", "Dead heat. Nobody wins, everyone's annoyed."];
+const SOLO = [[5, "You've got the vocabulary of a houseplant."], [10, "Not bad. Not good either."], [16, "Okay, wordsmith."], [999, "Disgustingly good. Are you okay?"]];
+
+/* ============ Helpers ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const parseList = t => String(t || "").split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+const key = (cat, w) => cat + ":" + String(w).toLowerCase();
+const clone = o => JSON.parse(JSON.stringify(o));
+const TEAM_COLOURS = ["var(--orange)", "var(--blue)", "var(--yellow)", "var(--plum)", "var(--cream)", "#1E7A45"];
+const teamColour = i => TEAM_COLOURS[i % TEAM_COLOURS.length];
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2400); }
+let audio;
+function beep(freq = 660, dur = 0.12, vol = 0.14) {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = "square"; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, audio.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + dur);
+    o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime + dur);
+  } catch (e) {}
+}
+let wakeLock = null;
+async function holdScreen(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen");
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; }
+}
+const IN_CLAUDE = !!window.claude?.use;
+const use = n => (window.claude?.use ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
+
+/* ============ Profile: prefs, saved, binned (this device + your account) ============ */
+const PROFILE_KEY = "wys.profile.v1";
+function defaultProfile() {
+  return {
+    accepted: false, updatedAt: 0, nick: "",
+    prefs: { age: "", city: "", nationality: "", culture: "", languages: "", interests: [], humour: [], boundary: 1, setting: "friends" },
+    words: {}, saved: [], rejected: [],
+    setup: { boundary: 1, setting: "friends", rounds: 4, seconds: 45, ai: true, mode: "pass", teams: [{ name: "Team 1", players: "" }, { name: "Team 2", players: "" }], names: "" },
+    ai: null,
+  };
+}
+function mergeProfile(p) {
+  const d = defaultProfile();
+  return { ...d, ...p, prefs: { ...d.prefs, ...(p?.prefs || {}) }, setup: { ...d.setup, ...(p?.setup || {}) }, words: { ...(p?.words || {}) } };
+}
+let profile = (() => { try { const r = localStorage.getItem(PROFILE_KEY); if (r) return mergeProfile(JSON.parse(r)); } catch (e) {} return defaultProfile(); })();
+let profileTimer;
+function saveProfile(quiet) {
+  profile.updatedAt = Date.now();
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {}
+  clearTimeout(profileTimer);
+  profileTimer = setTimeout(() => {
+    if (CAP.db && CAP.uid) chain("profile", () => CAP.db.doc(`data/users/${CAP.uid}/profile`).set(clone(profile)));
+  }, 800);
+  if (!quiet) { const n = $("#saved-note"); if (n) { n.textContent = "Saved"; clearTimeout(saveProfile.t); saveProfile.t = setTimeout(() => n.textContent = "", 1500); } }
+}
+const isSaved = (cat, w) => profile.saved.some(s => key(s.cat, s.w) === key(cat, w));
+function toggleSave(cat, w) {
+  if (isSaved(cat, w)) profile.saved = profile.saved.filter(s => key(s.cat, s.w) !== key(cat, w));
+  else profile.saved.unshift({ cat, w });
+  saveProfile(true);
+}
+function binCard(cat, w) { const k = key(cat, w); if (!profile.rejected.includes(k)) { profile.rejected.push(k); saveProfile(true); } }
+
+/* ============ Capabilities ============ */
+const CAP = { db: null, user: null, sample: null, downloads: null, uid: null, pid: null, myName: "", canEdit: false, ready: false };
+const chains = {};
+function chain(k, fn) {
+  chains[k] = (chains[k] || Promise.resolve()).then(fn).catch(e => {
+    if (e?.code === "invalid_argument" && k.startsWith("player")) { ON.readonly = true; toast("You can watch but can't join. Ask the host for edit access."); renderSoon(); }
+    else if (e?.code === "quota_exceeded") toast("Storage is full. Ask the owner to clear old games.");
+    else if (k !== "profile") toast("Couldn't save. Check your connection.");
+  });
+  return chains[k];
+}
+async function initCaps() {
+  const [db, user, sample, downloads] = await Promise.all(["db", "user", "sample", "downloads"].map(use));
+  Object.assign(CAP, { db, user, sample, downloads });
+  if (user) {
+    const me = await user.me();
+    CAP.uid = me.id; CAP.myName = me.name || ""; CAP.canEdit = me.canEdit;
+    if (!profile.nick && CAP.myName) profile.nick = CAP.myName.split(" ")[0];
+  }
+  CAP.pid = CAP.uid;
+  if (!CAP.pid && db) {
+    try { CAP.pid = localStorage.getItem("wys.localid"); } catch (e) {}
+    if (!CAP.pid) { CAP.pid = "p" + Math.random().toString(36).slice(2, 12); try { localStorage.setItem("wys.localid", CAP.pid); } catch (e) {} }
+  }
+  if (db && CAP.uid) {
+    const s = await db.doc(`data/users/${CAP.uid}/profile`).get().catch(() => null);
+    if (s?.exists && (s.data().updatedAt || 0) > (profile.updatedAt || 0)) {
+      profile = mergeProfile(clone(s.data()));
+      try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {}
+    }
+  }
+  if (db) loadImportedBank();
+  CAP.ready = true;
+  // Rejoin a group game this phone was already in, or open one from a #CODE link
+  const hash = (location.hash || "").slice(1).toUpperCase();
+  if (/^[A-Z]{4}$/.test(hash)) { ON.prefill = hash; if (profile.accepted) S.sheet = "join"; }
+  let saved = ""; try { saved = localStorage.getItem("wys.group") || ""; } catch (e) {}
+  if (db && CAP.pid && /^[A-Z]{4}$/.test(saved)) {
+    const p = await db.doc("players/" + CAP.pid).get().catch(() => null);
+    if (p?.exists && p.data().game === saved) subscribe(saved);
+  }
+  renderSoon();
+}
+async function loadImportedBank() {
+  try {
+    const meta = await CAP.db.doc("bank/meta").get();
+    if (!meta.exists) return;
+    const m = meta.data(); useBuiltIn = m.useBuiltIn !== false;
+    const chunks = await Promise.all(Array.from({ length: m.chunks || 0 }, (_, i) => CAP.db.doc("bank/c" + i).get()));
+    IMPORTED = chunks.flatMap(c => c.exists ? (c.data().cards || []) : []).map(([w, cat, lvl, tags]) => ({ w, cat, lvl, tags: tags || [] }));
+    if (S.tab === "deck") renderSoon();
+  } catch (e) {}
+}
+
+/* ============ Personalised deck ============ */
+function personTags(p) {
+  const t = new Set();
+  if (!p) return t;
+  const city = String(p.city || "").trim().toLowerCase();
+  if (CITY_SLUG[city]) t.add(CITY_SLUG[city]);
+  for (const [c, list] of Object.entries(CITY_GROUPS)) if (c && list.some(x => x.toLowerCase() === city)) t.add(c);
+  const nat = String(p.nationality || "").trim().toLowerCase();
+  if (NAT_TAG[nat]) t.add(NAT_TAG[nat]);
+  if (ERA[p.age]) t.add(ERA[p.age]);
+  (p.interests || []).forEach(i => t.add(i));
+  if ((p.humour || []).includes("Dark")) t.add("dark");
+  return t;
+}
+/* people: prefs of everyone playing; words: their own word lists; ai: AI-made cards */
+function buildDeck({ people, boundary, setting, words = [], ai = [] }) {
+  if (people.some(p => p?.age === "Under 18")) boundary = 0;
+  const active = new Set([setting]);
+  people.forEach(p => personTags(p).forEach(t => active.add(t)));
+  const rejected = new Set(profile.rejected);
+  const seen = new Set(), personal = {}, general = {};
+  CAT_IDS.forEach(c => { personal[c] = []; general[c] = []; });
+  const add = (bucket, cat, w) => {
+    const k = key(cat, w);
+    if (!CAT_IDS.includes(cat) || seen.has(k) || rejected.has(k)) return;
+    seen.add(k); bucket[cat].push({ w, cat });
+  };
+  words.forEach(ws => CAT_IDS.forEach(c => parseList(ws?.[c]).forEach(w => add(personal, c, w))));
+  ai.forEach(c => add(personal, c.cat, c.w));
+  const bank = [...(useBuiltIn ? BUILT_IN : []), ...IMPORTED];
+  for (const c of shuffle(bank)) {
+    if (c.lvl > boundary) continue;
+    const tagged = c.tags.length > 0;
+    if (tagged && !c.tags.some(t => active.has(t))) continue;
+    const spicy = boundary > 0 && c.lvl >= Math.max(1, boundary - 1);
+    add(tagged || spicy ? personal : general, c.cat, c.w);
+  }
+  // Interleave: personal cards come up about two times in three
+  const deck = {};
+  for (const c of CAT_IDS) {
+    const p = shuffle(personal[c]), g = shuffle(general[c]), out = [];
+    while (p.length || g.length) out.push((p.length && (Math.random() < 0.66 || !g.length)) ? p.shift() : g.shift());
+    deck[c] = out;
+  }
+  return deck;
+}
+const deckSize = d => CAT_IDS.reduce((n, c) => n + (d[c]?.length || 0), 0);
+
+function describePerson(p, name) {
+  const bits = [];
+  if (p.age) bits.push("age " + p.age);
+  if (p.city) bits.push("lives in " + p.city);
+  if (p.nationality) bits.push(p.nationality);
+  if (p.culture) bits.push("cultural references: " + p.culture);
+  if (p.languages) bits.push("speaks " + p.languages);
+  if (p.interests?.length) bits.push("into " + p.interests.map(i => INTERESTS.find(x => x[0] === i)?.[1] || i).join(", "));
+  if (p.humour?.length) bits.push("humour: " + p.humour.join(", ").toLowerCase());
+  return `- ${name || "A player"}: ${bits.join("; ") || "no details given"}`;
+}
+let aiAbort = null;
+async function makeAICards(people, boundary, setting, names = []) {
+  if (!CAP.sample) return [];
+  aiAbort = new AbortController();
+  const lvl = LEVELS[boundary];
+  const prompt = `You write cards for "What You Sayin", a fast party game like Articulate: one player describes a word or short phrase without saying it and their team shouts guesses.
+
+Write cards for this group:
+${people.map((p, i) => describePerson(p, names[i])).join("\n")}
+Game setting: ${SETTINGS.find(s => s[0] === setting)?.[1] || setting}
+Boundary: ${lvl.name} (${lvl.desc})
+
+Rules:
+- 12 cards for each category: object, person, place, world, action, nature, random.
+- "place" means local or everyday places; "world" means countries, cities and landmarks.
+- Most cards should be specific to these players: their city, culture, age group, interests and humour, so it feels written for them. Mix in a few everyone knows.
+- Every card is 1 to 4 words, something this group would recognise and could describe in 30 seconds. No duplicates.
+- Match the boundary. Light is clean. Cheeky is innuendo, hangovers, dating, mild swearing. Unhinged is sex, drugs and chaos. Sickening adds gross-out bodily stuff.
+- Never punch down: no slurs, nothing mocking race, religion, disability, gender or sexuality, and no real private people.
+
+Reply with only JSON in this shape: {"object":["..."],"person":["..."],"place":["..."],"world":["..."],"action":["..."],"nature":["..."],"random":["..."]}`;
+  try {
+    const data = await CAP.sample.json(prompt, { cache: false, signal: aiAbort.signal });
+    const out = [];
+    for (const c of CAT_IDS) (Array.isArray(data?.[c]) ? data[c] : []).forEach(w => { if (typeof w === "string" && w.trim() && w.length < 60) out.push({ w: w.trim(), cat: c }); });
+    profile.ai = { at: Date.now(), cards: out }; saveProfile(true);
+    return out;
+  } catch (e) {
+    if (e?.code === "not_granted") CAP.sample = null;
+    if (e?.code !== "cancelled") toast(e?.code === "rate_limited" ? "AI's busy. Playing with the bank for now." : "Couldn't make AI cards this time. Using the bank.");
+    return [];
+  } finally { aiAbort = null; }
+}
+
+/* ============ Turn engine (shared by one-phone and group games) ============ */
+const MAX_SKIPS = 3;
+function blankTurn(extra) { return { phase: "pass", left: 0, endsAt: 0, cards: [], cur: -1, skips: 0, ...extra }; }
+const turnScore = t => t.cards.filter(c => c.res === "got").length;
+const skippedCards = t => t.cards.map((c, i) => ({ ...c, i })).filter(c => (c.res === "skip" || c.res === "park") && c.i !== t.cur);
+/* Returns a new turn after an action. draw() gives the next {w,cat} or null. */
+function applyAct(t, act, arg, draw) {
+  t = clone(t);
+  const cur = t.cards[t.cur];
+  const next = () => { const c = draw(); if (!c) { t.phase = "done"; return; } t.cards.push({ w: c.w, cat: c.cat, res: null }); t.cur = t.cards.length - 1; };
+  switch (act) {
+    case "start": if (t.cur < 0) next(); t.phase = t.phase === "done" ? "done" : "run"; t.endsAt = Date.now() + t.left; break;
+    case "pause": t.left = Math.max(0, t.endsAt - Date.now()); t.phase = "paused"; break;
+    case "resume": t.phase = "run"; t.endsAt = Date.now() + t.left; break;
+    case "got": cur.res = "got"; next(); break;
+    case "skip": if (t.skips >= MAX_SKIPS) return t; cur.res = "skip"; t.skips++; next(); break;
+    case "bin": cur.res = "bin"; next(); break;
+    case "unskip": { const c = t.cards[arg]; if (!c) return t; if (cur && cur.res == null) cur.res = "park"; c.res = null; t.cur = arg; break; }
+    case "timeup": t.phase = "last"; break;
+    case "last": if (cur) cur.res = arg ? "got" : "miss"; t.phase = "done"; break;
+    case "toggle": { const c = t.cards[arg]; if (c) c.res = c.res === "got" ? "miss" : "got"; break; }
+  }
+  return t;
+}
+
+/* ============ App state ============ */
+const S = { view: "welcome", tab: "home", sheet: null, busy: false, cooking: false, lastCardKey: "", step: 1, sub: { me: "you", saved: "fav", deck: "words", wcat: "object" } };
+let game = null;     // one-phone game
+const ON = { code: null, G: null, players: [], overlay: {}, queued: null, inflight: false, unsubs: [], dirty: false, prefill: "", readonly: false };
+
+function go(view, tab) {
+  if (view === "tabs") { S.view = "tabs"; if (tab) S.tab = tab; }
+  else S.view = view;
+  S.sheet = null;
+  render(); window.scrollTo(0, 0);
+}
+function render() {
+  const app = $("#app");
+  if (!profile.accepted) S.view = "welcome";
+  let html = "";
+  if (S.cooking) html = renderCooking(S.view === "group" ? "Writing cards for everyone in the room. Can take up to a minute." : "");
+  else if (S.view === "welcome") html = renderWelcome();
+  else if (S.view === "setup") html = renderSetup();
+  else if (S.view === "play") html = renderLocalPlay();
+  else if (S.view === "results") html = renderLocalResults();
+  else if (S.view === "group") html = renderGroup();
+  else html = { home: renderHome, me: renderMe, saved: renderSaved, deck: renderDeckTab }[S.tab]();
+  app.innerHTML = html;
+  const tb = $("#tabbar"); tb.hidden = S.view !== "tabs";
+  tb.querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === S.tab ? "true" : "false"));
+  renderSheet();
+  tickLoop();
+}
+function renderSoon() {
+  const a = document.activeElement;
+  if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { ON.dirty = true; return; }
+  render();
+}
+document.addEventListener("focusout", () => setTimeout(() => {
+  if (!ON.dirty) return;
+  const a = document.activeElement;
+  if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+  ON.dirty = false; render();
+}, 0));
+
+/* ============ Screens: welcome & tabs ============ */
+const filler = () => `<div class="filler">${swatches()}</div>`;
+const screen = (head, body, foot, fit) => `<div class="screen">${head ? `<div class="head">${head}</div>` : ""}<div class="body ${fit ? "fit" : ""}">${body}</div>${foot ? `<div class="foot">${foot}</div>` : ""}</div>`;
+const subtabs = (name, opts) => `<div class="seg subtabs" role="tablist">${opts.map(([v, l]) => `<button class="chip" role="tab" data-sub="${name}" data-val="${v}" aria-pressed="${S.sub[name] === v}">${l}</button>`).join("")}</div>`;
+const swatches = () => `<div class="swatches" aria-hidden="true"><i class="c-blue"></i><i class="c-cream"></i><i class="c-plum"></i><i class="c-orange"></i><i class="c-yellow"></i></div>`;
+const backBar = (label, act = "home", right = "") => `<div class="spread"><button class="back" data-act="${act}">← ${label}</button>${right || `<img class="logo-sm" src="img/logo-mark.png" alt="What You Sayin">`}</div>`;
+
+function renderWelcome() {
+  return screen(
+    swatches(),
+    `<img class="logo" src="img/logo.png" alt="What You Sayin">
+     ${filler()}
+     <div class="panel" style="gap:6px"><h3>Enter with caution</h3>
+       <p class="small">Some cards are rude. Some are ruder. You set how far it goes. Past Cheeky is 18+. Don't play Sickening with your nan. Or do. We're not your mum.</p></div>`,
+    `<input class="input" id="nick" maxlength="24" autocomplete="nickname" value="${esc(profile.nick)}" placeholder="What do we call you?" aria-label="Your name">
+     <button class="btn big yellow" data-act="enter">It's play time</button>`,
+    true);
+}
+
+function renderHome() {
+  const name = profile.nick || "you";
+  const resume = (game && !game.over) ? `<button class="resume c-cream" data-act="resume-local"><span>Game on pause</span><b>Carry on →</b></button>`
+    : (ON.code && ON.G) ? `<button class="resume c-cream" data-act="resume-group"><span>Game ${esc(ON.code)}</span><b>Back in →</b></button>` : "";
+  return screen(
+    `<div class="spread"><img class="logo-sm" src="img/logo-mark.png" alt="What You Sayin"><span class="label">Alright, ${esc(name)}</span></div>${resume}`,
+    `<div class="home-grid">
+      <img class="logo" style="grid-area:mark" src="img/logo.png" alt="What You Sayin">
+      <button class="tile c-blue" style="grid-area:quick" data-act="quick"><span class="sm">60 seconds</span><span class="lg">Quick fire</span></button>
+      <button class="tile c-plum" style="grid-area:play" data-act="new-game"><span class="sm">Start a</span><span class="lg">New game</span></button>
+      ${IN_CLAUDE ? `<button class="tile c-yellow" style="grid-area:join" data-act="join-open"><span class="sm">Got a code?</span><span class="lg">Join</span></button>`
+        : `<div class="tile c-cream" style="grid-area:join"><span class="sm">Everyone's phones</span><span class="lg">Soon</span></div>`}
+    </div>`, "", true);
+}
+
+function chipsHtml(name, options, selected, multi) {
+  return `<div class="chips" role="group">${options.map(([v, label]) => `<button class="chip" data-pref="${name}" data-val="${esc(v)}" data-multi="${multi ? 1 : 0}" aria-pressed="${multi ? selected.includes(v) : selected === v}">${esc(label)}</button>`).join("")}</div>`;
+}
+function renderMe() {
+  const p = profile.prefs, kid = p.age === "Under 18", sub = S.sub.me;
+  const cityOpts = Object.values(CITY_GROUPS).flat().map(c => `<option value="${esc(c)}">`).join("");
+  let body = "";
+  if (sub === "you") body = `
+    <p class="muted small">All optional. The more you give us, the more the cards are about you. In a group game, everyone's gets mixed together.</p>
+    <label class="field"><span>Name</span><input class="input" id="nick" maxlength="24" value="${esc(profile.nick)}"></label>
+    <label class="field"><span>Age</span>
+      <select class="input" id="pref-age"><option value="">Rather not say</option>${AGES.map(a => `<option ${p.age === a ? "selected" : ""}>${a}</option>`).join("")}</select></label>
+    <label class="field"><span>Where you live</span>
+      <input class="input" id="pref-city" list="cities" value="${esc(p.city)}" placeholder="Start typing a city"><datalist id="cities">${cityOpts}</datalist></label>
+    ${filler()}`;
+  else if (sub === "culture") body = `
+    <label class="field"><span>Nationality</span>
+      <input class="input" id="pref-nationality" list="nats" value="${esc(p.nationality)}" placeholder="e.g. Australian"><datalist id="nats">${NATIONALITIES.map(n => `<option value="${esc(n)}">`).join("")}</datalist></label>
+    <label class="field"><span>Cultural references</span><input class="input" id="pref-culture" value="${esc(p.culture)}" placeholder="e.g. Greek family, Bollywood, Catholic school"></label>
+    <label class="field"><span>Languages</span><input class="input" id="pref-languages" value="${esc(p.languages)}" placeholder="e.g. English, Tagalog"></label>
+    ${filler()}`;
+  else if (sub === "taste") body = `
+    <h3>Interests</h3>${chipsHtml("interests", INTERESTS, p.interests, true)}
+    <h3>Humour</h3>${chipsHtml("humour", HUMOURS.map(h => [h, h]), p.humour, true)}
+    ${filler()}`;
+  else body = `
+    <h3>Boundaries</h3>
+    <div class="seg">${LEVELS.map((l, i) => `<button class="chip" data-pref="boundary" data-val="${i}" aria-pressed="${p.boundary === i}" ${kid && i > 0 ? "disabled" : ""}>${l.name}</button>`).join("")}</div>
+    <p class="hint">${kid ? "Under 18s play on Light. Sorry, rules." : esc(LEVELS[p.boundary].desc)}</p>
+    <h3>Usual game setting</h3>${chipsHtml("setting", SETTINGS, p.setting, false)}
+    <div class="panel" style="gap:6px"><h3>We're watching</h3>
+      <p class="muted small">You've saved ${profile.saved.length} card${profile.saved.length === 1 ? "" : "s"} and binned ${profile.rejected.length}. Binned cards never come back. Next we'll use what you save and skip to learn what makes you laugh.</p></div>
+    <button class="link" data-act="sign-out" style="align-self:flex-start">Reset everything on this phone</button>`;
+  return screen(
+    `<div class="spread"><h2>Your vibe</h2><span class="saved-note" id="saved-note"></span></div>
+     ${subtabs("me", [["you", "You"], ["culture", "Culture"], ["taste", "Taste"], ["rules", "Rules"]])}`,
+    body, "", true);
+}
+
+function renderSaved() {
+  const rej = profile.rejected.map(k => { const i = k.indexOf(":"); return { cat: k.slice(0, i), w: k.slice(i + 1) }; });
+  const fav = S.sub.saved === "fav";
+  const body = fav
+    ? (profile.saved.length ? `<ul class="list">${profile.saved.map((s, i) => `
+        <li><div data-cat="${s.cat}"><span class="w"><span class="dot"></span>${esc(s.w)}</span><span class="row"><span class="tag skip">${catName(s.cat)}</span><button class="x" data-unsave="${i}" aria-label="Remove ${esc(s.w)}">×</button></span></div></li>`).join("")}</ul>`
+        : `<div class="wait">Nothing saved yet. Tap ☆ on a card mid-game to keep the good ones.</div>${filler()}`)
+    : (rej.length ? `<ul class="list">${rej.map((r, i) => `<li><div data-cat="${esc(r.cat)}"><span class="w"><span class="dot"></span>${esc(r.w)}</span><button class="chip" data-unbin="${i}">Unbin</button></div></li>`).join("")}</ul>`
+        : `<div class="wait">Nothing binned. Cards you bin in a game land here and never get dealt to you again.</div>${filler()}`);
+  return screen(
+    `<div class="spread"><h2>Saved</h2></div>${subtabs("saved", [["fav", `Favourites (${profile.saved.length})`], ["bin", `Binned (${rej.length})`]])}`,
+    body, "", false);
+}
+
+function renderDeckTab() {
+  const total = (useBuiltIn ? BUILT_IN.length : 0) + IMPORTED.length;
+  let body;
+  if (S.sub.deck === "words") {
+    const c = S.sub.wcat;
+    body = `
+      <p class="muted small">In-jokes, your local, your mate's ex. These always go in your games, and come with you when you join someone else's.</p>
+      <div class="chips">${CATS.map(x => { const n = parseList(profile.words[x.id]).length; return `<button class="chip" data-sub="wcat" data-val="${x.id}" aria-pressed="${c === x.id}">${x.name}${n ? ` <small>${n}</small>` : ""}</button>`; }).join("")}</div>
+      <textarea class="input grow" data-words="${c}" maxlength="4000" placeholder="Your own ${catName(c).toLowerCase()} cards. One per line, or comma separated." aria-label="Your own ${catName(c)} cards">${esc(profile.words[c] || "")}</textarea>`;
+  } else {
+    body = `
+      <p class="muted small">${BUILT_IN.length} built-in cards${useBuiltIn ? "" : " (switched off)"} and ${IMPORTED.length} from your spreadsheet. Everyone only gets the ones that fit them: city, culture, age, interests, setting and boundary.</p>
+      ${CAP.canEdit ? `
+        <div class="fmt">Columns: <b>word</b>, <b>category</b> (object, person, place, world, action, nature, random), <b>level</b> (light, cheeky, unhinged, sickening), <b>tags</b> (optional, spaces between). Tags: sydney melbourne brisbane london nyc paris · au uk us ie nz · genz millennial genx boomer · sport travel music food geography history film fashion · work date family wedding icebreaker · dark.</div>
+        <label class="check"><input type="checkbox" id="keep-builtin" ${useBuiltIn ? "checked" : ""}> Keep the built-in cards as well</label>
+        <div class="row">
+          <label class="btn blue" for="bank-file">Load spreadsheet</label>
+          <input type="file" id="bank-file" accept=".xlsx,.xls,.csv" hidden>
+          ${CAP.downloads ? `<button class="btn ghost" data-act="template">Get a template</button>` : ""}
+        </div>
+        <p class="hint" id="import-status">${IMPORTED.length ? `A new sheet replaces the ${IMPORTED.length} cards from the last one.` : ""}</p>`
+      : `<p class="hint">Only the owner can load new cards into the bank.</p>`}
+      ${filler()}`;
+  }
+  return screen(
+    `<div class="spread"><h2>Deck</h2><span class="label">${total} in the bank</span></div>${subtabs("deck", [["words", "Your words"], ["bank", "Card bank"]])}`,
+    body, "", S.sub.deck === "bank");
+}
+
+/* ============ New game setup: three short steps ============ */
+function setupPeople() { return [profile.prefs]; }
+function renderSetup() {
+  const st = profile.setup, kid = profile.prefs.age === "Under 18", p = profile.prefs, step = S.step;
+  const vibe = [p.city, p.nationality, ...(p.interests || []).map(i => INTERESTS.find(x => x[0] === i)?.[1]), ...(p.humour || [])].filter(Boolean);
+  const titles = ["", "The vibe", "The time", "The players"];
+  let body = "";
+  if (step === 1) body = `
+    <h3>What's the occasion?</h3>${chipsHtml("s-setting", SETTINGS, st.setting, false)}
+    <h3>How rude?</h3>
+    <div class="seg">${LEVELS.map((l, i) => `<button class="chip" data-pref="s-boundary" data-val="${i}" aria-pressed="${st.boundary === i}" ${kid && i > 0 ? "disabled" : ""}>${l.name}</button>`).join("")}</div>
+    <p class="hint">${esc(LEVELS[st.boundary].desc)}</p>
+    <p class="hint">Personalised for: ${vibe.length ? esc(vibe.join(" · ")) : "nothing yet"}. <button class="link" data-tab-go="me">Update</button></p>
+    ${CAP.sample ? `<label class="check"><input type="checkbox" id="s-ai" ${st.ai ? "checked" : ""}><span><b>Write fresh cards for us with AI.</b> Takes up to a minute and uses your Claude usage.</span></label>` : ""}
+    ${filler()}`;
+  else if (step === 2) body = `
+    <h3>How long have you got?</h3>${chipsHtml("s-rounds", [[2, "10 minutes"], [4, "Half an hour"], [8, "All night"]], st.rounds, false)}
+    <h3>Seconds per turn</h3>${chipsHtml("s-seconds", [[30, "30"], [45, "45"], [60, "60"]], st.seconds, false)}
+    <p class="hint">${st.rounds} round${st.rounds === 1 ? "" : "s"}: every team gets ${st.rounds} turn${st.rounds === 1 ? "" : "s"} of ${st.seconds} seconds.</p>
+    ${filler()}`;
+  else body = `
+    <div class="seg">
+      <button class="chip" data-pref="s-mode" data-val="pass" aria-pressed="${st.mode === "pass"}">Pass the phone</button>
+      <button class="chip" data-pref="s-mode" data-val="group" aria-pressed="${st.mode === "group"}" ${CAP.db ? "" : "disabled"}>Everyone's phones</button>
+    </div>
+    ${IN_CLAUDE ? "" : `<p class="hint">Playing on everyone's phones is coming to the app soon. For now, pass the phone.</p>`}
+    ${st.mode === "pass" ? `
+      ${st.teams.map((t, i) => `
+        <div class="team-edit">
+          <span class="pawn" style="background:${teamColour(i)}"></span>
+          <input class="input" data-team-name="${i}" value="${esc(t.name)}" maxlength="30" aria-label="Team ${i + 1} name">
+          ${st.teams.length > 1 ? `<button class="x" data-team-rm="${i}" aria-label="Remove team">×</button>` : "<span></span>"}
+          <input class="input players" data-team-players="${i}" value="${esc(t.players)}" placeholder="Who's in it? e.g. Sam, Jo" aria-label="Players in team ${i + 1}">
+        </div>`).join("")}
+      <div class="row">${st.teams.length < 6 ? `<button class="btn ghost" data-act="team-add">Add a team</button>` : ""}<button class="btn cream" data-act="pairs-open">Random pairs</button></div>
+      <p class="hint">One team? Then it's co-op, chasing a high score together. Good for dates.</p>`
+    : `<p class="muted">You'll get a 4-letter code. Everyone joins on their own phone, picks a partner or gets paired at random, and their preferences go into the deck too.</p>${filler()}`}`;
+  const last = step === 3;
+  return screen(
+    `${backBar(step === 1 ? "Home" : "Back", step === 1 ? "home" : "step-back", `<span class="label">Step ${step} of 3</span>`)}
+     <div class="steps" aria-hidden="true"><i class="on"></i><i class="${step > 1 ? "on" : ""}"></i><i class="${step > 2 ? "on" : ""}"></i></div>
+     <h2>${titles[step]}</h2>`,
+    body,
+    last ? `<button class="btn big orange" data-act="${st.mode === "group" ? "host" : "play-local"}">${st.mode === "group" ? "Open the lobby" : "Play"}</button>`
+         : `<button class="btn big plum" data-act="step-next">Next</button>`,
+    step !== 3 || st.mode !== "pass");
+}
+function renderCooking(sub) {
+  return screen(
+    "",
+    `${filler()}
+     <div class="center"><div class="dots" aria-hidden="true"><i class="c-blue"></i><i class="c-cream"></i><i class="c-plum"></i><i class="c-orange"></i><i class="c-yellow"></i></div>
+     <h2 style="margin-top:12px">Cooking your deck</h2>
+     <p class="muted" style="margin-top:6px">${esc(sub || "Writing cards about you lot. Can take up to a minute.")}</p></div>`,
+    `<button class="btn ghost" data-act="ai-stop">Skip it, use the bank</button>`, true);
+}
+
+/* ============ One-phone game ============ */
+function startLocal(kind) {
+  const st = profile.setup;
+  const quick = kind === "quick";
+  const teams = quick ? [{ name: profile.nick || "You", players: [] }]
+    : st.teams.map((t, i) => ({ name: t.name.trim() || `Team ${i + 1}`, players: parseList(t.players) }));
+  const opts = quick
+    ? { boundary: profile.prefs.boundary, setting: profile.prefs.setting, seconds: 60, rounds: 1 }
+    : { boundary: st.boundary, setting: st.setting, seconds: st.seconds, rounds: st.rounds };
+  const run = async () => {
+    let ai = [];
+    if (!quick && st.ai && CAP.sample) {
+      S.cooking = true; render();
+      ai = await makeAICards(setupPeople(), opts.boundary, opts.setting, [profile.nick]);
+      S.cooking = false;
+    } else if (quick && profile.ai?.cards) ai = profile.ai.cards;
+    const deckOpts = { people: setupPeople(), boundary: opts.boundary, setting: opts.setting, words: [profile.words], ai };
+    game = {
+      kind, ...opts, deckOpts, deck: buildDeck(deckOpts),
+      teams: teams.map(t => ({ ...t, score: 0 })), round: 1, teamIdx: 0, rot: {}, log: [], over: false,
+    };
+    game.turn = newLocalTurn();
+    go("play");
+  };
+  run();
+}
+function newLocalTurn() {
+  const t = game.teams[game.teamIdx];
+  const r = game.rot[game.teamIdx] || 0;
+  return blankTurn({ team: game.teamIdx, left: game.seconds * 1000, describer: t.players.length ? t.players[r % t.players.length] : "" });
+}
+function localDraw() {
+  let cats = CAT_IDS.filter(c => game.deck[c]?.length);
+  if (!cats.length) { game.deck = buildDeck(game.deckOpts); cats = CAT_IDS.filter(c => game.deck[c]?.length); if (!cats.length) return null; toast("Deck reshuffled"); }
+  return game.deck[pick(cats)].shift();
+}
+function renderLocalPlay() {
+  const g = game; if (!g) { S.view = "tabs"; return renderHome(); }
+  const t = g.turn, team = g.teams[t.team];
+  const roundLine = g.kind === "quick" ? "Quick fire" : `Round ${g.round} of ${g.rounds}`;
+  const scores = g.teams.length > 1 ? miniScores(g.teams.map((x, i) => ({ name: x.name, score: x.score, i }))) : "";
+  if (t.phase === "pass") {
+    return screen(
+      backBar("Home", "home", `<span class="label">${roundLine}</span>`),
+      `${g.kind === "quick" ? `<div class="tile c-blue grow"><span class="sm">Describe as many as you can</span><span class="lg">60 seconds</span></div>`
+          : `<div class="tile c-orange grow"><span class="sm">Pass the phone to</span><span class="lg">${esc(t.describer || team.name)}</span></div>`}
+       ${filler()}
+       <p class="muted center small">${t.describer ? `${esc(team.name)} are guessing. ` : ""}No saying the word, rhymes or "sounds like". ${MAX_SKIPS} skips. ${g.seconds} seconds.</p>`,
+      `${scores}<button class="btn big yellow" data-act="t-start">I'm ready</button>`, true);
+  }
+  if (t.phase === "done") return turnSummaryHtml(t, team.name, true, g.teams.length > 1 ? g.teams.map((x, i) => ({ name: x.name, score: x.score + (i === t.team ? turnScore(t) : 0), i })) : null, nextLabelLocal());
+  return turnPlayHtml(t, { teamName: team.name, seconds: g.seconds, role: "describer", boundary: g.boundary });
+}
+function nextLabelLocal() {
+  const g = game;
+  const lastTeam = g.teamIdx === g.teams.length - 1;
+  if (lastTeam && g.round >= g.rounds) return "See who won";
+  return `Next: ${g.teams[(g.teamIdx + 1) % g.teams.length].name}`;
+}
+function finishLocalTurn() {
+  const g = game, t = g.turn, got = turnScore(t);
+  g.teams[t.team].score += got;
+  g.log.push({ team: t.team, got, by: t.describer, skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w), binned: t.cards.filter(c => c.res === "bin").length });
+  g.rot[t.team] = (g.rot[t.team] || 0) + 1;
+  g.teamIdx = (g.teamIdx + 1) % g.teams.length;
+  if (g.teamIdx === 0) g.round++;
+  if (g.round > g.rounds) { g.over = true; holdScreen(false); go("results"); return; }
+  g.turn = newLocalTurn();
+  render(); window.scrollTo(0, 0);
+}
+function renderLocalResults() {
+  const g = game; if (!g) { S.view = "tabs"; return renderHome(); }
+  return resultsHtml(g.teams.map((t, i) => ({ name: t.name, score: t.score, i })), g.log, g.kind, (i) => g.teams[i]?.name);
+}
+
+/* ============ Shared play UI ============ */
+function stampFor(kind, boundary) { return pick(STAMPS[kind][boundary > 0 ? 1 : 0]); }
+function miniScores(rows) {
+  const sorted = rows.slice().sort((a, b) => b.score - a.score);
+  return `<div class="mini-scores">${sorted.map((r, pos) => `<span class="ms ${pos === 0 && r.score > 0 ? "lead" : ""}"><span class="pawn" style="background:${teamColour(r.i)}"></span>${esc(r.name)} <b>${r.score}</b></span>`).join("")}</div>`;
+}
+/* opts: teamName, seconds, role (describer | guesser | watcher), boundary, describerName, menu (group), extraFoot */
+function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, menu, extraFoot = "" }) {
+  const cur = t.cards[t.cur];
+  const left = t.phase === "run" ? Math.max(0, t.endsAt - Date.now()) : t.left;
+  const secs = Math.ceil(left / 1000);
+  const skipped = skippedCards(t);
+  const head = `
+    <div class="play-head">
+      ${menu ? `<button class="team" data-act="g-menu">☰ ${esc(teamName)}</button>` : `<span class="team">${esc(teamName)}</span>`}
+      <span class="digits ${secs <= 5 ? "low" : ""}" id="digits">${secs}</span>
+      ${role === "describer" ? `<button class="skipped-btn" data-act="t-skipped" ${skipped.length ? "" : "disabled"}>Skipped (${skipped.length})</button>` : `<span class="score-pill">${turnScore(t)} got</span>`}
+    </div>
+    <div class="bar ${secs <= 5 ? "low" : ""}"><i id="bar" style="transform:scaleX(${Math.min(1, left / (seconds * 1000))})"></i></div>`;
+
+  if (t.phase === "last") {
+    return screen(head,
+      `<div class="flat-card catfill" data-cat="${cur?.cat || "random"}"><span class="sm">Time's up. Last card:</span><span class="lg">${role === "guesser" ? "?" : esc(cur?.w || "")}</span></div>
+       <p class="card-note">${role === "describer" ? "Did they get it before the buzzer?" : `${esc(describerName || "The describer")} is deciding if it counts.`}</p>`,
+      (role === "describer" ? `<div class="controls two"><button class="btn cream" data-act="t-last-no">Nah</button><button class="btn yellow correct" data-act="t-last-yes">Yes</button></div>` : "") + extraFoot, true);
+  }
+  if (t.phase === "paused") {
+    return screen(head,
+      `<div class="flat-card c-plum"><span class="sm">Hold up</span><span class="lg">Paused</span></div>${filler()}`,
+      (role === "describer" ? `<button class="btn big yellow" data-act="t-resume">Resume</button>` : "")
+        + (S.view === "play" ? `<button class="link" data-act="home">Quit to home</button>` : "") + extraFoot, true);
+  }
+  if (!cur) return screen(head, "", extraFoot, true);
+  if (role === "guesser") {
+    return screen(head,
+      `<div class="flat-card c-orange"><span class="sm">${esc(describerName || "They")} ${describerName ? "is" : "are"} describing</span><span class="lg">Guess!</span></div>
+       <p class="card-note">Shout it out. It's a ${catName(cur.cat)}.</p>`, extraFoot, true);
+  }
+  const ck = `${t.cards.length}:${t.cur}:${cur.w}`;
+  const flip = role === "describer" && ck !== S.lastCardKey;
+  S.lastCardKey = ck;
+  const card = `
+    <div class="card3d ${flip ? "flip" : ""}" id="card" data-cat="${cur.cat}">
+      <div class="inner">
+        <div class="face front catfill" data-cat="${cur.cat}"><span class="sm">It's a</span><span class="lg">${catName(cur.cat)}</span></div>
+        <div class="face back">
+          <div class="top"><span class="cat-chip">${catName(cur.cat)}</span>
+            <button class="star" data-act="t-save" aria-pressed="${isSaved(cur.cat, cur.w)}">${isSaved(cur.cat, cur.w) ? "★ Saved" : "☆ Save"}</button></div>
+          <div class="word">${esc(cur.w)}</div>
+          ${role === "watcher" ? `<p class="card-note">You're watching. Call it if they say the word or a rhyme.</p>` : ""}
+        </div>
+      </div>
+    </div>`;
+  if (role === "watcher") return screen(head, card, extraFoot, true);
+  return screen(head, card,
+    `<div class="controls">
+      <button class="btn ghost" data-act="t-bin" title="Bad card. Never show it again">Bin it</button>
+      <button class="btn cream" data-act="t-skip" ${t.skips >= MAX_SKIPS ? "disabled" : ""}>Skip <small>${MAX_SKIPS - t.skips} left</small></button>
+      <button class="btn yellow correct" data-act="t-got">Correct</button>
+    </div>
+    <p class="card-note"><button class="link" data-act="t-pause">Pause</button></p>${extraFoot}`, true);
+}
+function turnSummaryHtml(t, teamName, canFix, board, nextLabel, extraFoot = "") {
+  const got = turnScore(t);
+  const tagFor = r => ({ got: ["got", "Got it"], skip: ["skip", "Skipped"], park: ["skip", "Skipped"], bin: ["bin", "Binned"], miss: ["miss", "Missed"] }[r] || ["miss", "Out of time"]);
+  return screen(
+    `<div class="big-num c-yellow"><b>${got}</b><span class="quip">${esc(turnQuip(got))}</span></div>
+     <p class="muted small">${esc(teamName)} get ${got} point${got === 1 ? "" : "s"}.${canFix ? " Tap a card to fix a mis-tap." : ""}</p>`,
+    `<ul class="list">${t.cards.map((c, i) => { const [cls, txt] = tagFor(c.res); return `
+      <li><button data-cat="${c.cat}" ${canFix ? `data-act="t-toggle" data-i="${i}"` : "disabled"}><span class="w"><span class="dot"></span>${esc(c.w)}</span><span class="tag ${cls}">${txt}</span></button></li>`; }).join("")}</ul>`,
+    `${board ? miniScores(board) : ""}${nextLabel ? `<button class="btn big orange" data-act="t-next">${esc(nextLabel)}</button>` : ""}${extraFoot}`,
+    false);
+}
+function scoreboardHtml(rows) {
+  const sorted = rows.slice().sort((a, b) => b.score - a.score);
+  return `<div class="scoreboard">${sorted.map((r, pos) => `
+    <div class="rowx ${pos === 0 && r.score > 0 ? "c-plum" : "c-cream"}"><span class="pos">${pos + 1}</span><span class="pawn" style="background:${teamColour(r.i)}"></span><span class="nm">${esc(r.name)}</span><span class="n">${r.score}</span></div>`).join("")}</div>`;
+}
+function resultsHtml(rows, log, kind, nameOfTeam) {
+  const sorted = rows.slice().sort((a, b) => b.score - a.score);
+  let headline;
+  if (rows.length === 1) headline = (SOLO.find(([max]) => rows[0].score <= max) || SOLO[SOLO.length - 1])[1];
+  else if (sorted[0].score === sorted[1].score) headline = pick(TIE);
+  else headline = pick(WIN).replace("{w}", sorted[0].name);
+  const loser = rows.length > 2 || (rows.length === 2 && sorted[0].score !== sorted[1].score) ? pick(LOSE).replace("{l}", sorted[sorted.length - 1].name) : "";
+  const best = log.slice().sort((a, b) => b.got - a.got)[0];
+  const shame = shuffle(log.flatMap(l => l.skipped || [])).slice(0, 3);
+  const binned = log.reduce((n, l) => n + (l.binned || 0), 0);
+  return screen(
+    `<div class="wordmark c-orange"><div class="sm">${rows.length === 1 ? "YOU GOT" : "AND THE WINNER IS"}</div><div class="lg" style="font-size:clamp(32px,min(12vw,7vh),68px)">${rows.length === 1 ? rows[0].score : esc(sorted[0].name)}</div></div>`,
+    `<p class="quip">${esc(headline)}</p>
+     ${loser ? `<p class="muted small">${esc(loser)}</p>` : ""}
+     ${rows.length > 1 ? scoreboardHtml(rows) : ""}
+     <div class="stats">
+         ${best ? `<div class="tile c-blue"><span class="sm">Best turn</span><span class="lg">${best.got}</span><span class="sm" style="font-size:12px">${esc(best.by || nameOfTeam(best.team) || "")}</span></div>` : ""}
+         <div class="tile c-plum"><span class="sm">Binned</span><span class="lg">${binned}</span><span class="sm" style="font-size:12px">${binned ? "Harsh" : "Easy to please"}</span></div>
+       ${shame.length ? `<div class="tile c-cream" style="grid-column:1/-1"><span class="sm">Hall of shame: skipped</span><span style="font-weight:700">${shame.map(esc).join(" · ")}</span></div>` : ""}
+     </div>`,
+    kind === "group" ? `<button class="btn big yellow" data-act="group-done">Back home</button>`
+      : `<div class="pair"><button class="btn ghost" data-act="home">Home</button><button class="btn big yellow" data-act="${kind === "quick" ? "quick" : "play-again"}">Again</button></div>`,
+    false);
+}
+
+function renderSheet() {
+  const root = $("#sheet-root");
+  let inner = "";
+  if (S.sheet === "skipped") {
+    const t = S.view === "play" ? game?.turn : gstate()?.turn;
+    const list = t ? skippedCards(t) : [];
+    inner = `<div class="spread"><h3>Skipped cards</h3><button class="x" data-act="sheet-close" aria-label="Close">×</button></div>
+      <p class="hint">Tap one to have another go. The card you're on goes into this pile.</p>
+      ${list.length ? `<ul class="list">${list.map(c => `<li><button data-cat="${c.cat}" data-act="t-unskip" data-i="${c.i}"><span class="w"><span class="dot"></span>${esc(c.w)}</span><span class="tag skip">${catName(c.cat)}</span></button></li>`).join("")}</ul>` : `<p class="muted">Nothing skipped. Look at you.</p>`}`;
+  } else if (S.sheet === "join") {
+    inner = `<div class="spread"><h3>Join a game</h3><button class="x" data-act="sheet-close" aria-label="Close">×</button></div>
+      <div class="row"><input class="input code-input" id="join-code" maxlength="4" autocomplete="off" placeholder="ABCD" value="${esc(ON.prefill)}" style="flex:1" aria-label="Game code">
+      <button class="btn" data-act="join">Join</button></div>
+      <p class="hint">The host's screen shows the code. You need access to this page first, so ask them to share it with you.</p>`;
+  } else if (S.sheet === "pairs") {
+    inner = `<div class="spread"><h3>Random pairs</h3><button class="x" data-act="sheet-close" aria-label="Close">×</button></div>
+      <textarea class="input" id="s-names" rows="4" placeholder="Everyone's names, comma separated" aria-label="Everyone's names">${esc(profile.setup.names)}</textarea>
+      <button class="btn big cream" data-act="make-pairs">Make random pairs</button>`;
+  } else if (S.sheet === "menu") {
+    const G = gstate(); if (!G) { S.sheet = null; root.innerHTML = ""; return; }
+    const myIdx = myTeamIdx(G);
+    inner = `<div class="spread"><h3>Game ${esc(G.code)} · Round ${G.round} of ${G.rounds}</h3><button class="x" data-act="sheet-close" aria-label="Close">×</button></div>
+      ${scoreboardHtml(groupScores(G))}
+      ${myIdx < 0 ? `<div class="label">You're watching. Join a pair?</div><div class="chips">${G.teams.map((tm, i) => `<button class="chip" data-jointeam="${i}">${esc(teamName(tm))}</button>`).join("")}</div>` : ""}
+      <div class="pair"><button class="btn ghost" data-act="leave">Leave</button>${G.host === CAP.pid ? `<button class="btn orange" data-act="g-end">End game</button>` : ""}</div>`;
+  }
+  root.innerHTML = inner ? `<div class="sheet-back" data-act="sheet-close"><div class="sheet" role="dialog">${inner}</div></div>` : "";
+}
+
+/* Timer for whichever turn is on screen; the describer's phone calls time */
+let raf = 0, lastSec = null;
+function tickLoop() {
+  cancelAnimationFrame(raf);
+  const loop = () => {
+    const local = S.view === "play";
+    const t = local ? game?.turn : (S.view === "group" ? gstate()?.turn : null);
+    if (!t || t.phase !== "run") return;
+    const secs0 = local ? game.seconds : gstate().seconds;
+    const left = Math.max(0, t.endsAt - Date.now()), secs = Math.ceil(left / 1000);
+    const d = $("#digits"), b = $("#bar");
+    if (d) { d.textContent = secs; d.classList.toggle("low", secs <= 5); }
+    if (b) { b.style.transform = `scaleX(${Math.min(1, left / (secs0 * 1000))})`; b.parentElement.classList.toggle("low", secs <= 5); }
+    const mine = local || t.describer === CAP.pid;
+    if (mine && secs !== lastSec) { if (secs <= 5 && secs > 0) beep(880, 0.06, 0.08); lastSec = secs; }
+    if (mine && left <= 0) { beep(200, 0.7, 0.2); holdScreen(false); S.sheet = null; turnAct("timeup"); return; }
+    raf = requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+/* Turn actions route to the local game or the group game */
+function turnAct(act, arg) {
+  if (S.view === "play") {
+    game.turn = applyAct(game.turn, act, arg, localDraw);
+    render();
+  } else if (S.view === "group") {
+    const G = gstate(); if (!G?.turn) return;
+    const used = new Set(G.used || []);
+    const t = applyAct(G.turn, act, arg, () => groupDraw(G, used));
+    pushGame({ turn: t, used: [...used].slice(-900) });
+  }
+}
+function animatedAct(kind) {
+  if (S.busy) return;
+  const t = S.view === "play" ? game.turn : gstate()?.turn;
+  const cur = t?.cards[t.cur]; if (!cur) return;
+  if (kind === "skip" && t.skips >= MAX_SKIPS) { toast(`That's your ${MAX_SKIPS} skips. Crack on.`); return; }
+  if (kind === "bin") binCard(cur.cat, cur.w);
+  const card = $("#card");
+  const boundary = S.view === "play" ? game.boundary : gstate().boundary;
+  if (kind === "got") beep(990, 0.05, 0.08); else if (kind === "skip") beep(330, 0.08, 0.06);
+  if (!card) { turnAct(kind); return; }
+  S.busy = true;
+  const st = document.createElement("div");
+  st.className = "stamp " + (kind === "got" ? "c-yellow" : kind === "skip" ? "c-cream" : "c-plum");
+  st.textContent = stampFor(kind, boundary);
+  card.parentElement.style.position = "relative";
+  card.parentElement.appendChild(st);
+  card.classList.add("out-" + kind);
+  setTimeout(() => { S.busy = false; turnAct(kind); }, 300);
+}
+
+/* ============ Group game: everyone on their own phone ============ */
+const gstate = () => ON.G ? { ...ON.G, ...ON.overlay } : null;
+const myPlayer = () => ON.players.find(p => p.id === CAP.pid) || null;
+function nameOf(pid) { const p = ON.players.find(x => x.id === pid); return (p?.nick || "").trim() || "Someone"; }
+const teamName = t => (t?.members || []).map(nameOf).join(" & ") || "Empty team";
+const myTeamIdx = G => (G.teams || []).findIndex(t => (t.members || []).includes(CAP.pid));
+
+function unsubscribeAll() { ON.unsubs.forEach(u => { try { u(); } catch (e) {} }); ON.unsubs = []; }
+function subscribe(code) {
+  unsubscribeAll();
+  Object.assign(ON, { code, G: null, players: [], overlay: {}, queued: null });
+  try { localStorage.setItem("wys.group", code); } catch (e) {}
+  const err = e => { if (e?.code === "revoked") { ON.code = null; renderSoon(); } };
+  ON.unsubs.push(CAP.db.doc("games/" + code).onSnapshot(s => { ON.G = s.exists ? s.data() : null; if (S.view === "group") renderSoon(); }, err));
+  ON.unsubs.push(CAP.db.collection("players").where("game", "==", code).onSnapshot(s => {
+    ON.players = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    if (S.view === "group") renderSoon();
+  }, err));
+}
+function pushGame(patch) {
+  ON.overlay = { ...ON.overlay, ...patch };
+  ON.queued = { ...(ON.queued || {}), ...patch };
+  renderSoon(); flushGame();
+}
+async function flushGame() {
+  if (ON.inflight || !ON.queued) return;
+  const p = ON.queued; ON.queued = null; ON.inflight = true;
+  try { await CAP.db.doc("games/" + ON.code).update(p); } catch (e) { toast("Couldn't update the game. Check your connection."); }
+  ON.inflight = false;
+  if (ON.queued) flushGame(); else { ON.overlay = {}; renderSoon(); }
+}
+function playerDoc(extra) {
+  return { nick: profile.nick || CAP.myName || "", prefs: clone(profile.prefs), words: clone(profile.words), ...extra };
+}
+async function hostGame() {
+  const st = profile.setup, letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code = Array.from({ length: 4 }, () => pick(letters)).join("");
+    const s = await CAP.db.doc("games/" + code).get().catch(() => null);
+    if (s && !s.exists) break;
+  }
+  try {
+    await CAP.db.doc("games/" + code).set({
+      code, host: CAP.pid, createdAt: Date.now(), status: "lobby",
+      seconds: st.seconds, rounds: st.rounds, boundary: st.boundary, setting: st.setting, ai: !!(st.ai && CAP.sample),
+      deck: [], teams: [], teamIdx: 0, round: 1, turn: null, used: [], log: [],
+    });
+  } catch (e) { toast(e?.code === "invalid_argument" ? "You need edit access to this page to host." : "Couldn't create the game. Try again."); return; }
+  await joinGame(code);
+}
+async function joinGame(code) {
+  code = String(code || "").trim().toUpperCase();
+  if (!/^[A-Z]{4}$/.test(code)) { toast("Codes are 4 letters"); return; }
+  if (!CAP.db || !CAP.pid) { toast("Playing together needs this page open in Claude while signed in"); return; }
+  const s = await CAP.db.doc("games/" + code).get().catch(() => null);
+  if (!s?.exists) { toast(`No game with code ${code}`); return; }
+  const prev = await CAP.db.doc("players/" + CAP.pid).get().catch(() => null);
+  const pd = prev?.exists && prev.data().game === code ? prev.data() : null;
+  ON.readonly = false;
+  await chain("player:" + CAP.pid, () => CAP.db.doc("players/" + CAP.pid).set(playerDoc({
+    game: code, joinedAt: pd?.joinedAt || Date.now(), partner: pd?.partner || null, auto: pd?.auto || false,
+  })));
+  if (ON.readonly) return;
+  subscribe(code);
+  go("group");
+}
+function leaveGame() {
+  oPauseIfDescribing();
+  const code = ON.code;
+  unsubscribeAll();
+  Object.assign(ON, { code: null, G: null, players: [], overlay: {}, queued: null });
+  try { localStorage.removeItem("wys.group"); } catch (e) {}
+  if (code) chain("player:" + CAP.pid, () => CAP.db.doc("players/" + CAP.pid).set({ game: "", joinedAt: 0, partner: null, auto: false, nick: "", prefs: {}, words: {} }));
+  go("tabs", "home");
+}
+const setPlayer = (id, patch) => chain("player:" + id, () => CAP.db.doc("players/" + id).update(patch));
+function partnerOf(p) { const q = p?.partner && ON.players.find(x => x.id === p.partner); return q && q.partner === p.id ? q : null; }
+function lobbyPairs() {
+  const seen = new Set(), pairs = [];
+  for (const p of ON.players) { const q = partnerOf(p); if (q && !seen.has(p.id)) { pairs.push([p.id, q.id]); seen.add(p.id); seen.add(q.id); } }
+  return { pairs, single: ON.players.filter(p => !seen.has(p.id)) };
+}
+function pairUp(a, b) { setPlayer(a, { partner: b, auto: false }); setPlayer(b, { partner: a, auto: false }); }
+function buildTeams() {
+  const { pairs, single } = lobbyPairs();
+  const rest = shuffle(single.map(p => p.id));
+  while (rest.length >= 2) pairs.push([rest.pop(), rest.pop()]);
+  const teams = shuffle(pairs).map(m => ({ members: m }));
+  if (rest.length && teams.length) teams[Math.floor(Math.random() * teams.length)].members.push(rest.pop());
+  return teams;
+}
+function groupDraw(G, used) {
+  const deck = G.deck || [];
+  const avail = c => deck.some(([w, cat]) => cat === c && !used.has(key(cat, w)));
+  let cats = CAT_IDS.filter(avail);
+  if (!cats.length) { used.clear(); cats = CAT_IDS.filter(avail); if (!cats.length) return null; }
+  const cat = pick(cats);
+  const [w] = deck.find(([w2, c2]) => c2 === cat && !used.has(key(c2, w2)));
+  used.add(key(cat, w));
+  return { w, cat };
+}
+async function startGroupGame(G) {
+  const teams = buildTeams();
+  if (teams.length < 2) { toast("You need at least 2 pairs"); return; }
+  const people = ON.players.map(p => p.prefs || {});
+  let ai = [];
+  if (G.ai && CAP.sample) {
+    S.cooking = true; render();
+    ai = await makeAICards(people, G.boundary, G.setting, ON.players.map(p => p.nick));
+    S.cooking = false;
+  }
+  const deck = buildDeck({ people, boundary: G.boundary, setting: G.setting, words: ON.players.map(p => p.words || {}), ai });
+  // Store as one ordered list, compact: [word, category]
+  const flat = CAT_IDS.flatMap(c => deck[c].slice(0, 220).map(x => [x.w, x.cat]));
+  pushGame({ status: "playing", teams, deck: flat, teamIdx: 0, round: 1, turn: null, used: [], log: [] });
+}
+function oPauseIfDescribing() {
+  const t = gstate()?.turn;
+  if (t && t.phase === "run" && t.describer === CAP.pid) { turnAct("pause"); holdScreen(false); }
+}
+function suggestedDescriber(G, ti) {
+  const present = (G.teams[ti]?.members || []).filter(id => ON.players.some(p => p.id === id));
+  const turns = id => (G.log || []).filter(l => l.byId === id).length;
+  return present.sort((a, b) => turns(a) - turns(b))[0] || null;
+}
+function groupScores(G) { return (G.teams || []).map((t, i) => ({ name: teamName(t), i, score: (G.log || []).filter(l => l.team === i).reduce((n, l) => n + l.got, 0) })); }
+
+function renderGroup() {
+  if (ON.readonly) return screen(backBar("Home"), `<div class="panel"><h2>Ask for access</h2><p>You can open this page but can't save to it, so you can't join yet. Ask whoever shared it to give you edit access.</p></div>${filler()}`, "", true);
+  const G = gstate();
+  if (!ON.code) { S.view = "tabs"; return renderHome(); }
+  if (!G) return screen(backBar("Leave", "leave"), `<div class="wait">Loading game ${esc(ON.code)}…</div>`, "", true);
+  if (G.status === "lobby") return renderLobby(G);
+  if (G.status === "over") return resultsHtml(groupScores(G), G.log || [], "group", i => teamName(G.teams[i]));
+  return renderGroupPlay(G);
+}
+function renderLobby(G) {
+  const isHost = G.host === CAP.pid, me = myPlayer(), mine = partnerOf(me);
+  const { pairs, single } = lobbyPairs();
+  const asked = me?.partner && !mine ? ON.players.find(p => p.id === me.partner) : null;
+  const incoming = mine ? [] : ON.players.filter(p => p.id !== CAP.pid && p.partner === CAP.pid && me?.partner !== p.id);
+  const free = single.filter(p => p.id !== CAP.pid && p.id !== asked?.id && !incoming.includes(p));
+  const person = id => `<span class="person ${id === CAP.pid ? "me" : ""}">${esc(nameOf(id))}${id === CAP.pid ? " (you)" : ""}</span>`;
+  const partner = !me ? "" : mine
+    ? `<div class="panel"><div class="label">Your partner</div><div class="spread"><h3>You & ${esc(nameOf(mine.id))}</h3><button class="link" data-act="split">Split up</button></div></div>`
+    : `<div class="panel">
+        <h3>Find a partner</h3>
+        ${incoming.map(p => `<div class="invite"><span><b>${esc(nameOf(p.id))}</b> wants you</span><span class="row"><button class="chip" data-decline="${p.id}">No thanks</button><button class="btn" data-accept="${p.id}">Accept</button></span></div>`).join("")}
+        ${asked ? `<div class="invite"><span>Waiting for <b>${esc(nameOf(asked.id))}</b> to say yes</span><button class="chip" data-act="cancel-ask">Cancel</button></div>` : ""}
+        ${me.auto ? `<p class="small"><b>You'll get a random partner.</b> If someone else picks random too, you're matched. Otherwise it happens at the start.</p><button class="chip" data-act="auto" aria-pressed="true">Random partner: on</button>`
+          : `${free.length ? `<div class="chips">${free.map(p => `<button class="chip" data-ask="${p.id}">${esc(nameOf(p.id))}${p.auto ? " <small>random</small>" : ""}</button>`).join("")}</div>` : `<p class="hint">Nobody else is free yet.</p>`}
+             <button class="btn cream" data-act="auto">Give me a random partner</button>`}
+      </div>`;
+  return screen(
+    `${backBar("Leave", "leave", `<span class="label">${LEVELS[G.boundary].name} · ${esc(SETTINGS.find(s => s[0] === G.setting)?.[1] || "")}</span>`)}
+     <div class="codebar c-plum"><div><div class="label" style="color:var(--cream)">Game code</div><div class="code">${esc(G.code)}</div></div>
+       <p class="small" style="color:var(--cream);max-width:22ch">Everyone taps Join on their phone and types this in.</p></div>`,
+    `${partner}
+     <div class="panel">
+       <div class="label">Pairs so far</div>
+       ${pairs.length ? pairs.map((pr, i) => `<div class="row"><span class="pawn" style="background:${teamColour(i)}"></span><div class="people">${pr.map(person).join("")}</div></div>`).join("") : `<p class="hint">No pairs yet.</p>`}
+       ${single.length ? `<div class="label">Still single</div><div class="people">${single.map(p => person(p.id)).join("")}</div>` : ""}
+       ${isHost && single.length >= 2 ? `<button class="btn ghost" data-act="pair-rest">Pair everyone left at random</button>` : ""}
+     </div>
+     <p class="hint">Your preferences and your own words go into the deck.${G.ai ? " The host's phone writes fresh cards for the room when the game starts." : ""}</p>`,
+    isHost ? (ON.players.length < 4 ? `<div class="wait">You need 4 players for 2 pairs. ${ON.players.length} here so far.</div>`
+      : `<button class="btn big orange" data-act="g-start">Start · ${ON.players.length} players</button>`)
+      : `<div class="wait">Waiting for the host to start…</div>`,
+    false);
+}
+function renderGroupPlay(G) {
+  const t = G.turn, ti = t ? t.team : G.teamIdx, team = G.teams[ti] || { members: [] };
+  const myIdx = myTeamIdx(G), onTeam = myIdx === ti;
+  const teamEmpty = !(team.members || []).some(id => ON.players.some(p => p.id === id));
+  const tName = teamName(team);
+  const top = `<div class="spread"><button class="back" data-act="g-menu">☰ Scores</button><span class="label">Round ${G.round} of ${G.rounds}</span></div>`;
+  const scores = miniScores(groupScores(G));
+  if (!t) {
+    const sug = suggestedDescriber(G, ti);
+    if (onTeam || teamEmpty) {
+      return screen(top,
+        `<div class="tile c-orange grow"><span class="sm">${esc(tName)}, you're up</span><span class="lg">${sug === CAP.pid ? "You describe" : sug ? esc(nameOf(sug)) + " describes" : "Who's describing?"}</span></div>
+         ${filler()}
+         <p class="muted center small">Whoever taps the button gets the cards on their phone.</p>`,
+        `${scores}<button class="btn big yellow" data-act="g-describe">I'm describing</button>`, true);
+    }
+    return screen(top, `<div class="tile c-cream grow"><span class="sm">${esc(tName)} are picking who describes</span><span class="lg">Hang on</span></div>${filler()}`, scores, true);
+  }
+  const describing = t.describer === CAP.pid;
+  const role = describing ? "describer" : onTeam ? "guesser" : "watcher";
+  const dName = nameOf(t.describer);
+  const takeOver = !describing && (onTeam || teamEmpty) && t.phase !== "done" ? `<p class="card-note"><button class="link" data-act="g-takeover">${esc(dName)} dropped out? Take over</button></p>` : "";
+  if (t.phase === "pass") {
+    return screen(top,
+      `<div class="tile c-plum grow"><span class="sm">${describing ? "You're describing" : `${esc(dName)} is describing`}</span><span class="lg">${describing ? "Ready?" : role === "guesser" ? "Get ready" : "Watch them"}</span></div>
+       ${filler()}
+       ${describing ? `<p class="muted center small">No saying the word, rhymes or "sounds like". ${MAX_SKIPS} skips. ${G.seconds} seconds.</p>` : ""}`,
+      describing ? `<button class="btn big yellow" data-act="t-start">Start the clock</button><button class="link" data-act="g-unclaim">Actually, not me</button>` : scores + takeOver, true);
+  }
+  if (t.phase === "done") {
+    const isLast = ti === G.teams.length - 1 && G.round >= G.rounds;
+    return turnSummaryHtml(t, tName, describing || onTeam || teamEmpty, groupScores(G).map(r => r.i === ti ? { ...r, score: r.score + turnScore(t) } : r), isLast ? "See who won" : `Next: ${teamName(G.teams[(ti + 1) % G.teams.length])}`);
+  }
+  return turnPlayHtml(t, { teamName: tName, seconds: G.seconds, role, boundary: G.boundary, describerName: dName, menu: true, extraFoot: takeOver });
+}
+function groupNext(G) {
+  const t = G.turn, got = turnScore(t);
+  const entry = { team: t.team, got, byId: t.describer, by: nameOf(t.describer), skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w).slice(0, 5), binned: t.cards.filter(c => c.res === "bin").length };
+  const log = [...(G.log || []), entry].slice(-60);
+  let teamIdx = (t.team + 1) % G.teams.length, round = G.round;
+  if (teamIdx === 0) round++;
+  if (round > G.rounds) pushGame({ turn: null, log, status: "over" });
+  else pushGame({ turn: null, log, teamIdx, round });
+  window.scrollTo(0, 0);
+}
+
+/* ============ Events ============ */
+document.addEventListener("click", e => {
+  const b = e.target.closest("button, [data-act]");
+  if (!b) return;
+  const act = b.dataset.act;
+
+  if (b.dataset.tab) { go("tabs", b.dataset.tab); return; }
+  if (b.dataset.tabGo) { go("tabs", b.dataset.tabGo); return; }
+  if (b.dataset.sub) { S.sub[b.dataset.sub] = b.dataset.val; render(); return; }
+
+  // Preference chips (Me tab and game setup)
+  if (b.dataset.pref) {
+    const name = b.dataset.pref, raw = b.dataset.val;
+    if (name.startsWith("s-")) {
+      const k = name.slice(2), num = ["boundary", "rounds", "seconds"].includes(k);
+      profile.setup[k] = num ? +raw : raw;
+      if (k === "setting" && (raw === "family" || raw === "work") && profile.setup.boundary > 1) profile.setup.boundary = 1;
+    } else if (b.dataset.multi === "1") {
+      const arr = profile.prefs[name] || [];
+      profile.prefs[name] = arr.includes(raw) ? arr.filter(x => x !== raw) : [...arr, raw];
+    } else profile.prefs[name] = name === "boundary" ? +raw : raw;
+    if (name === "boundary") profile.setup.boundary = +raw;
+    if (name === "setting") profile.setup.setting = raw;
+    saveProfile(); render(); return;
+  }
+
+  switch (act) {
+    case "enter": profile.accepted = true; profile.nick = ($("#nick")?.value || profile.nick).trim(); saveProfile(true); go("tabs", "home"); return;
+    case "home": if (S.view === "play" && game?.turn?.phase === "run") turnAct("pause"); go("tabs", "home"); return;
+    case "quick": startLocal("quick"); return;
+    case "step-next": S.step = Math.min(3, S.step + 1); render(); return;
+    case "step-back": S.step = Math.max(1, S.step - 1); render(); return;
+    case "pairs-open": S.sheet = "pairs"; renderSheet(); return;
+    case "g-menu": S.sheet = "menu"; renderSheet(); return;
+    case "new-game": S.step = 1; profile.setup.boundary = Math.min(profile.setup.boundary, profile.prefs.age === "Under 18" ? 0 : 3); go("setup"); return;
+    case "play-again": S.step = 1; go("setup"); return;
+    case "join-open": S.sheet = "join"; renderSheet(); setTimeout(() => $("#join-code")?.focus(), 0); return;
+    case "join": joinGame($("#join-code")?.value); return;
+    case "resume-local": go("play"); return;
+    case "resume-group": go("group"); return;
+    case "sign-out":
+      if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Tap again to wipe your settings, saved and binned cards"; return; }
+      profile = defaultProfile(); saveProfile(true); game = null; go("welcome"); return;
+    case "team-add": profile.setup.teams.push({ name: `Team ${profile.setup.teams.length + 1}`, players: "" }); saveProfile(true); render(); return;
+    case "make-pairs": {
+      const names = shuffle(parseList($("#s-names")?.value));
+      if (names.length < 2) { toast("Add at least 2 names"); return; }
+      const teams = []; while (names.length >= 2) teams.push([names.pop(), names.pop()]);
+      if (names.length) teams[Math.floor(Math.random() * teams.length)].push(names.pop());
+      profile.setup.teams = teams.slice(0, 6).map(t => ({ name: t.join(" & "), players: t.join(", ") }));
+      S.sheet = null; saveProfile(true); render(); toast(`Made ${profile.setup.teams.length} team${profile.setup.teams.length === 1 ? "" : "s"}`); return;
+    }
+    case "play-local": startLocal("game"); return;
+    case "host": if (!CAP.db) { toast("Playing together needs this page open in Claude"); return; } b.disabled = true; hostGame().finally(() => { b.disabled = false; }); return;
+    case "ai-stop": aiAbort?.abort(); return;
+    case "template": {
+      const csv = "word,category,level,tags\nBondi Icebergs,place,light,sydney\nWalk of shame,action,cheeky,\nThe office printer,object,light,work\nSwamp ass,random,sickening,\n";
+      CAP.downloads.save({ filename: "what-you-sayin-cards.csv", data: csv }).catch(err => { if (err?.code !== "declined") toast("Couldn't save the template here"); });
+      return;
+    }
+    case "sheet-close": if (e.target.closest(".sheet") && !e.target.closest("button")) return; S.sheet = null; renderSheet(); return;
+    // Turn controls
+    case "t-start": beep(660, 0.1, 0.1); holdScreen(true); lastSec = null; S.lastCardKey = ""; turnAct("start"); return;
+    case "t-got": animatedAct("got"); return;
+    case "t-skip": animatedAct("skip"); return;
+    case "t-bin": animatedAct("bin"); return;
+    case "t-save": { const t = S.view === "play" ? game.turn : gstate().turn, c = t.cards[t.cur]; toggleSave(c.cat, c.w); const on = isSaved(c.cat, c.w); b.setAttribute("aria-pressed", on); b.textContent = on ? "★ Saved" : "☆ Save"; return; }
+    case "t-skipped": S.sheet = "skipped"; renderSheet(); return;
+    case "t-unskip": S.sheet = null; renderSheet(); turnAct("unskip", +b.dataset.i); return;
+    case "t-pause": turnAct("pause"); holdScreen(false); return;
+    case "t-resume": holdScreen(true); turnAct("resume"); return;
+    case "t-last-yes": turnAct("last", true); return;
+    case "t-last-no": turnAct("last", false); return;
+    case "t-toggle": turnAct("toggle", +b.dataset.i); return;
+    case "t-next": if (S.view === "play") finishLocalTurn(); else groupNext(gstate()); return;
+    // Group
+    case "leave": leaveGame(); return;
+    case "group-done": leaveGame(); return;
+  }
+
+  if (b.dataset.unsave != null) { profile.saved.splice(+b.dataset.unsave, 1); saveProfile(true); render(); return; }
+  if (b.dataset.unbin != null) { profile.rejected.splice(+b.dataset.unbin, 1); saveProfile(true); render(); return; }
+  if (b.dataset.teamRm != null) { profile.setup.teams.splice(+b.dataset.teamRm, 1); saveProfile(true); render(); return; }
+
+  if (S.view !== "group") return;
+  const G = gstate(); if (!G) return;
+  const me = myPlayer(), isHost = G.host === CAP.pid;
+  if (b.dataset.ask && me) {
+    const other = ON.players.find(p => p.id === b.dataset.ask);
+    if (other?.partner === CAP.pid || other?.auto) pairUp(CAP.pid, other.id);
+    else setPlayer(CAP.pid, { partner: b.dataset.ask, auto: false });
+    return;
+  }
+  if (b.dataset.accept) { pairUp(CAP.pid, b.dataset.accept); return; }
+  if (b.dataset.decline) { setPlayer(b.dataset.decline, { partner: null }); return; }
+  if (b.dataset.jointeam != null) {
+    const i = +b.dataset.jointeam;
+    pushGame({ teams: G.teams.map((t, j) => ({ members: [...t.members.filter(id => id !== CAP.pid), ...(j === i ? [CAP.pid] : [])] })) });
+    S.sheet = null; renderSheet();
+    return;
+  }
+  switch (act) {
+    case "cancel-ask": setPlayer(CAP.pid, { partner: null }); return;
+    case "split": { const q = partnerOf(me); setPlayer(CAP.pid, { partner: null, auto: false }); if (q) setPlayer(q.id, { partner: null }); return; }
+    case "auto": {
+      if (!me) return;
+      if (me.auto) { setPlayer(CAP.pid, { auto: false }); return; }
+      const waiting = lobbyPairs().single.find(p => p.id !== CAP.pid && p.auto && !p.partner);
+      if (waiting) { pairUp(CAP.pid, waiting.id); toast(`You're with ${nameOf(waiting.id)}`); }
+      else setPlayer(CAP.pid, { auto: true, partner: null });
+      return;
+    }
+    case "pair-rest": if (isHost) { const rest = shuffle(lobbyPairs().single.map(p => p.id)); while (rest.length >= 2) pairUp(rest.pop(), rest.pop()); if (rest.length) toast(`${nameOf(rest[0])} is spare and will join a pair as a three`); } return;
+    case "g-start": if (isHost) startGroupGame(G); return;
+    case "g-end": if (isHost) { if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Tap again to end it"; return; } pushGame({ status: "over", turn: null }); } return;
+    case "g-describe": pushGame({ turn: blankTurn({ team: G.teamIdx, describer: CAP.pid, left: G.seconds * 1000 }) }); return;
+    case "g-unclaim": pushGame({ turn: null }); return;
+    case "g-takeover": pushGame({ turn: { ...G.turn, describer: CAP.pid } }); return;
+  }
+});
+
+let nickTimer, setupTimer, wordsTimer;
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (el.id === "nick") { profile.nick = el.value.trim(); clearTimeout(nickTimer); nickTimer = setTimeout(() => { saveProfile(); if (ON.code) setPlayer(CAP.pid, { nick: profile.nick }); }, 500); }
+  if (el.id && el.id.startsWith("pref-")) { profile.prefs[el.id.slice(5)] = el.id === "pref-age" ? el.value : el.value.trim(); if (el.id === "pref-age" && el.value === "Under 18") { profile.prefs.boundary = 0; profile.setup.boundary = 0; } saveProfile(); if (el.tagName === "SELECT") render(); }
+  if (el.dataset.words) { profile.words[el.dataset.words] = el.value; clearTimeout(wordsTimer); wordsTimer = setTimeout(() => saveProfile(true), 600); }
+  if (el.dataset.teamName != null) { profile.setup.teams[+el.dataset.teamName].name = el.value; clearTimeout(setupTimer); setupTimer = setTimeout(() => saveProfile(true), 500); }
+  if (el.dataset.teamPlayers != null) { profile.setup.teams[+el.dataset.teamPlayers].players = el.value; clearTimeout(setupTimer); setupTimer = setTimeout(() => saveProfile(true), 500); }
+  if (el.id === "s-names") { profile.setup.names = el.value; clearTimeout(setupTimer); setupTimer = setTimeout(() => saveProfile(true), 500); }
+});
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.id === "s-ai") { profile.setup.ai = el.checked; saveProfile(true); }
+  if (el.id === "bank-file" && el.files?.[0]) importBank(el.files[0]);
+});
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "join-code") joinGame(e.target.value); });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) return;
+  if (S.view === "play" && game?.turn?.phase === "run") turnAct("pause");
+  if (S.view === "group") oPauseIfDescribing();
+});
+
+/* ============ Spreadsheet import (owner) ============ */
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = () => res(window.XLSX); s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+const LEVEL_WORDS = { light: 0, clean: 0, cheeky: 1, unhinged: 2, sickening: 3 };
+async function importBank(file) {
+  const status = $("#import-status"); const say = m => { if (status) status.textContent = m; };
+  say("Reading " + file.name + "…");
+  let rows;
+  try {
+    const XLSX = await loadXLSX();
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+    rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+  } catch (e) { say("Couldn't read that file. Save it as .xlsx or .csv and try again."); return; }
+  const norm = r => Object.fromEntries(Object.entries(r).map(([k, v]) => [String(k).trim().toLowerCase(), String(v).trim()]));
+  const cards = [], bad = [];
+  rows.map(norm).forEach((r, i) => {
+    const w = r.word || r.card || r.words;
+    const cat = (r.category || r.cat || "").toLowerCase();
+    const lv = (r.level || r.boundary || "light").toLowerCase();
+    const lvl = lv in LEVEL_WORDS ? LEVEL_WORDS[lv] : /^[0-3]$/.test(lv) ? +lv : null;
+    if (!w || !CAT_IDS.includes(cat) || lvl == null) { bad.push(i + 2); return; }
+    cards.push([w.slice(0, 60), cat, lvl, (r.tags || "").toLowerCase().split(/[\s,]+/).filter(Boolean)]);
+  });
+  if (!cards.length) { say("No usable rows. Check the column names: word, category, level, tags."); return; }
+  const keep = $("#keep-builtin")?.checked !== false;
+  try {
+    const size = 1500, n = Math.ceil(cards.length / size);
+    const old = await CAP.db.doc("bank/meta").get().catch(() => null);
+    for (let i = 0; i < n; i++) await CAP.db.doc("bank/c" + i).set({ cards: cards.slice(i * size, (i + 1) * size) });
+    for (let i = n; i < (old?.exists ? old.data().chunks || 0 : 0); i++) await CAP.db.doc("bank/c" + i).delete();
+    await CAP.db.doc("bank/meta").set({ chunks: n, count: cards.length, at: Date.now(), useBuiltIn: keep });
+  } catch (e) { say(e?.code === "invalid_argument" ? "Only the owner or an editor can load cards into the bank." : "Couldn't save the cards. Try again."); return; }
+  IMPORTED = cards.map(([w, cat, lvl, tags]) => ({ w, cat, lvl, tags })); useBuiltIn = keep;
+  render();
+  toast(`Loaded ${cards.length} cards${bad.length ? `. Skipped ${bad.length} row${bad.length === 1 ? "" : "s"} with missing bits` : ""}`);
+}
+
+/* ============ Boot ============ */
+S.view = profile.accepted ? "tabs" : "welcome";
+render();
+initCaps();
+</script>
