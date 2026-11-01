@@ -42,6 +42,22 @@ storage and Claude access, so they need a backend first:
 - AI-written cards
 - Loading a spreadsheet into the shared card bank
 
+## Editing the cards
+
+All built-in cards live in **`cards.xlsx`**: one row per card, with Word,
+Category, Level and Tags columns. The "How to edit" tab lists the tags.
+Edit it in Excel (or Google Sheets, then download as .xlsx), save it back
+here as `cards.xlsx`, then run:
+
+```bash
+npm run build-html
+```
+
+That loads the cards into the game. Rows with a missing word, an unknown
+category or level, or a comma in the word are skipped, and the command says
+which. Reload the app in Expo Go to see the new cards, then commit
+`cards.xlsx`, `web/index.html` and `src/gameHtml.ts`.
+
 ## Changing the game
 
 The game lives in `web/index.html` (plus the logo images in `web/img/`).
