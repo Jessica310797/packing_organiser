@@ -436,6 +436,21 @@ function parseBank(src) {
   return out;
 }
 const BUILT_IN = parseBank(BANK_SRC);
+
+/* Pre-filled team names, each with the lowest rudeness level it suits. Built from team-names.xlsx. */
+/* TEAM_NAMES:start */const TEAM_NAMES = [["Wankers",3],["Slags",3],["Shaggers",3],["Scrotes",3],["Nonces",3],["Boozers",0],["Scumbags",2],["Hags",2],["Epstein's Guestlist",3],["Cunt Collective",3],["Slag Syndicate",2],["Gold Diggers",2],["Gaslighters",2],["Usual Suspects",0],["Slappers",2],["Paedos",3],["Commies",1],["Leeches",0],["Parasites",0],["Scallywags",1],["Bottom Feeders",0],["Vultures",0],["Maggots",0],["Rodents",0],["Gobshites",2],["Narcissists",0],["Cheapskates",0],["Charlatans",0],["Munters",0],["Scroungers",0],["Trolls",0],["Ratbags",0],["Rotters",0],["Traitors",0],["Wet Wipes",0],["Failures",0]];/* TEAM_NAMES:end */
+function pickTeamNames(n, boundary, taken = []) {
+  const free = t => !taken.includes(t[0]);
+  const exact = shuffle(TEAM_NAMES.filter(t => t[1] === boundary && free(t)).map(t => t[0]));
+  const lower = shuffle(TEAM_NAMES.filter(t => t[1] < boundary && free(t)).map(t => t[0]));
+  const pool = [...exact, ...lower];
+  return Array.from({ length: n }, (_, i) => pool[i] || `Team ${taken.length + i + 1}`);
+}
+function autoNameTeams() {
+  const st = profile.setup;
+  pickTeamNames(st.teams.length, st.boundary).forEach((name, i) => { st.teams[i].name = name; });
+  st.autoNames = true;
+}
 let IMPORTED = [];       // the owner's spreadsheet bank, shared through the store
 let useBuiltIn = true;
 
@@ -496,7 +511,7 @@ function defaultProfile() {
     accepted: false, updatedAt: 0, nick: "",
     prefs: { age: "", city: "", nationality: "", culture: "", languages: "", interests: [], humour: [], boundary: 1, setting: "friends" },
     words: {}, saved: [], rejected: [],
-    setup: { boundary: 1, setting: "friends", rounds: 4, seconds: 45, ai: true, mode: "pass", teams: [{ name: "Team 1", players: "" }, { name: "Team 2", players: "" }], names: "" },
+    setup: { boundary: 1, setting: "friends", rounds: 4, seconds: 45, ai: true, mode: "pass", teams: [{ name: "Team 1", players: "" }, { name: "Team 2", players: "" }], names: "", autoNames: true },
     ai: null,
   };
 }
@@ -885,7 +900,7 @@ function renderSetup() {
           ${st.teams.length > 1 ? `<button class="x" data-team-rm="${i}" aria-label="Remove team">×</button>` : "<span></span>"}
           <input class="input players" data-team-players="${i}" value="${esc(t.players)}" placeholder="Who's in it? e.g. Sam, Jo" aria-label="Players in team ${i + 1}">
         </div>`).join("")}
-      <div class="row">${st.teams.length < 6 ? `<button class="btn ghost" data-act="team-add">Add a team</button>` : ""}<button class="btn cream" data-act="pairs-open">Random pairs</button></div>
+      <div class="row">${st.teams.length < 6 ? `<button class="btn ghost" data-act="team-add">Add a team</button>` : ""}<button class="btn cream" data-act="team-names">New names</button><button class="btn cream" data-act="pairs-open">Random pairs</button></div>
       <p class="hint">One team? Then it's co-op, chasing a high score together. Good for dates.</p>`
     : `<p class="muted">You'll get a 4-letter code. Everyone joins on their own phone, picks a partner or gets paired at random, and their preferences go into the deck too.</p>${filler()}`}`;
   const last = step === 3;
@@ -1408,6 +1423,7 @@ document.addEventListener("click", e => {
     } else profile.prefs[name] = name === "boundary" ? +raw : raw;
     if (name === "boundary") profile.setup.boundary = +raw;
     if (name === "setting") profile.setup.setting = raw;
+    if ((name === "s-boundary" || name === "s-setting") && profile.setup.autoNames) autoNameTeams();
     saveProfile(); render(); return;
   }
 
@@ -1419,7 +1435,7 @@ document.addEventListener("click", e => {
     case "step-back": S.step = Math.max(1, S.step - 1); render(); return;
     case "pairs-open": S.sheet = "pairs"; renderSheet(); return;
     case "g-menu": S.sheet = "menu"; renderSheet(); return;
-    case "new-game": S.step = 1; profile.setup.boundary = Math.min(profile.setup.boundary, profile.prefs.age === "Under 18" ? 0 : 3); go("setup"); return;
+    case "new-game": S.step = 1; profile.setup.boundary = Math.min(profile.setup.boundary, profile.prefs.age === "Under 18" ? 0 : 3); if (profile.setup.autoNames !== false) autoNameTeams(); saveProfile(true); go("setup"); return;
     case "play-again": S.step = 1; go("setup"); return;
     case "join-open": S.sheet = "join"; renderSheet(); setTimeout(() => $("#join-code")?.focus(), 0); return;
     case "join": joinGame($("#join-code")?.value); return;
@@ -1428,13 +1444,19 @@ document.addEventListener("click", e => {
     case "sign-out":
       if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Tap again to wipe your settings, saved and binned cards"; return; }
       profile = defaultProfile(); saveProfile(true); game = null; go("welcome"); return;
-    case "team-add": profile.setup.teams.push({ name: `Team ${profile.setup.teams.length + 1}`, players: "" }); saveProfile(true); render(); return;
+    case "team-add": {
+      const st = profile.setup;
+      const [name] = st.autoNames ? pickTeamNames(1, st.boundary, st.teams.map(t => t.name)) : [`Team ${st.teams.length + 1}`];
+      st.teams.push({ name, players: "" }); saveProfile(true); render(); return;
+    }
+    case "team-names": autoNameTeams(); saveProfile(true); render(); return;
     case "make-pairs": {
       const names = shuffle(parseList($("#s-names")?.value));
       if (names.length < 2) { toast("Add at least 2 names"); return; }
       const teams = []; while (names.length >= 2) teams.push([names.pop(), names.pop()]);
       if (names.length) teams[Math.floor(Math.random() * teams.length)].push(names.pop());
       profile.setup.teams = teams.slice(0, 6).map(t => ({ name: t.join(" & "), players: t.join(", ") }));
+      profile.setup.autoNames = false;
       S.sheet = null; saveProfile(true); render(); toast(`Made ${profile.setup.teams.length} team${profile.setup.teams.length === 1 ? "" : "s"}`); return;
     }
     case "play-local": startLocal("game"); return;
@@ -1512,7 +1534,7 @@ document.addEventListener("input", e => {
   if (el.id === "nick") { profile.nick = el.value.trim(); clearTimeout(nickTimer); nickTimer = setTimeout(() => { saveProfile(); if (ON.code) setPlayer(CAP.pid, { nick: profile.nick }); }, 500); }
   if (el.id && el.id.startsWith("pref-")) { profile.prefs[el.id.slice(5)] = el.id === "pref-age" ? el.value : el.value.trim(); if (el.id === "pref-age" && el.value === "Under 18") { profile.prefs.boundary = 0; profile.setup.boundary = 0; } saveProfile(); if (el.tagName === "SELECT") render(); }
   if (el.dataset.words) { profile.words[el.dataset.words] = el.value; clearTimeout(wordsTimer); wordsTimer = setTimeout(() => saveProfile(true), 600); }
-  if (el.dataset.teamName != null) { profile.setup.teams[+el.dataset.teamName].name = el.value; clearTimeout(setupTimer); setupTimer = setTimeout(() => saveProfile(true), 500); }
+  if (el.dataset.teamName != null) { profile.setup.teams[+el.dataset.teamName].name = el.value; profile.setup.autoNames = false; clearTimeout(setupTimer); setupTimer = setTimeout(() => saveProfile(true), 500); }
   if (el.dataset.teamPlayers != null) { profile.setup.teams[+el.dataset.teamPlayers].players = el.value; clearTimeout(setupTimer); setupTimer = setTimeout(() => saveProfile(true), 500); }
   if (el.id === "s-names") { profile.setup.names = el.value; clearTimeout(setupTimer); setupTimer = setTimeout(() => saveProfile(true), 500); }
 });

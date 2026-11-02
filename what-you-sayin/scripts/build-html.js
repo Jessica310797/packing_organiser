@@ -32,6 +32,26 @@ async function readCards(file) {
   return { cards, problems };
 }
 
+async function readTeamNames(file) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(file);
+  const ws = wb.getWorksheet("Team names") || wb.worksheets[0];
+  const text = v => (v && typeof v === "object" ? (v.text ?? v.result ?? (v.richText || []).map(r => r.text).join("")) : v ?? "").toString().trim();
+  const names = [], problems = [], seen = new Set();
+  ws.eachRow((row, n) => {
+    if (n === 1) return;
+    const name = text(row.getCell(1).value), lvl = text(row.getCell(2).value).toLowerCase();
+    if (!name && !lvl) return;
+    if (!name) return problems.push(`row ${n}: no name`);
+    if (name.length > 30) return problems.push(`row ${n}: "${name}" is over 30 characters`);
+    if (!(lvl in LEVELS)) return problems.push(`row ${n}: unknown level "${lvl}"`);
+    if (seen.has(name.toLowerCase())) return problems.push(`row ${n}: "${name}" is a duplicate`);
+    seen.add(name.toLowerCase());
+    names.push([name, LEVELS[lvl]]);
+  });
+  return { names, problems };
+}
+
 // Same format as BANK_SRC in the game: "category level tags : card, card, card"
 function toBankSrc(cards) {
   const groups = new Map();
@@ -56,6 +76,17 @@ async function main() {
     page = page.slice(0, start) + toBankSrc(cards) + page.slice(end);
     fs.writeFileSync(pagePath, page);
     console.log(`Loaded ${cards.length} cards from cards.xlsx${problems.length ? ` (skipped ${problems.length} rows)` : ""}`);
+  }
+
+  const teamXlsx = path.join(root, "team-names.xlsx");
+  if (fs.existsSync(teamXlsx)) {
+    const { names, problems } = await readTeamNames(teamXlsx);
+    problems.forEach(p => console.warn("Skipped team name " + p));
+    if (!names.length) throw new Error("team-names.xlsx has no usable names, so nothing was changed.");
+    page = page.replace(/\/\* TEAM_NAMES:start \*\/[\s\S]*?\/\* TEAM_NAMES:end \*\//,
+      `/* TEAM_NAMES:start */const TEAM_NAMES = ${JSON.stringify(names)};/* TEAM_NAMES:end */`);
+    fs.writeFileSync(pagePath, page);
+    console.log(`Loaded ${names.length} team names from team-names.xlsx${problems.length ? ` (skipped ${problems.length} rows)` : ""}`);
   }
 
   page = page.replace(/src="(img\/[\w.-]+\.png)"/g, (_, file) => {

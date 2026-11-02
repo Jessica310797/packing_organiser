@@ -58,6 +58,14 @@ category or level, or a comma in the word are skipped, and the command says
 which. Reload the app in Expo Go to see the new cards, then commit
 `cards.xlsx`, `web/index.html` and `src/gameHtml.ts`.
 
+## Editing the team names
+
+New games fill in team names at random from **`team-names.xlsx`** (Name and
+Level columns), using names for the rudeness level the players pick, with
+milder names filling any gaps. Edit it the same way as `cards.xlsx`, then
+run `npm run build-html`. Players can still type their own names, or tap
+New names to re-roll.
+
 ## Changing the game
 
 The game lives in `web/index.html` (plus the logo images in `web/img/`).
