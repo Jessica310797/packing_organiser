@@ -285,11 +285,11 @@ const CATS = [
 const CAT_IDS = CATS.map(c => c.id);
 const catName = id => CATS.find(c => c.id === id)?.name || id;
 const LEVELS = [
-  { name: "Light", desc: "Clean enough for your nan." },
-  { name: "Cheeky", desc: "Innuendo, hangovers, terrible dates." },
-  { name: "Unhinged", desc: "Sex, drugs and bad decisions. 18+." },
-  { name: "Sickening", desc: "Bodily fluids. Genuinely vile. 18+." },
+  { name: "PG", desc: "Clean enough for your nan." },
+  { name: "Adults Only", desc: "Innuendo, hangovers, sex and terrible dates. 18+." },
+  { name: "Unhinged", desc: "Nothing's off limits. Filthy, gross, genuinely vile. 18+." },
 ];
+const MAX_LEVEL = LEVELS.length - 1;
 const SETTINGS = [["friends", "Friends"], ["date", "Date"], ["family", "Family"], ["work", "Work"], ["icebreaker", "Ice breaker"], ["wedding", "Wedding"], ["solo", "Solo"]];
 const INTERESTS = [["sport", "Sport"], ["travel", "Travel"], ["music", "Music"], ["food", "Food"], ["geography", "Geography"], ["history", "History"], ["film", "Film & TV"], ["fashion", "Fashion"]];
 const HUMOURS = ["Dry", "Sarcastic", "Dark", "Goofy", "Wholesome", "Stupid"];
@@ -309,7 +309,7 @@ const NAT_TAG = { australian: "au", "aboriginal and torres strait islander": "au
 
 /* ============ Card bank ============
    One line per group: category level [tags] : card, card, card
-   level 0 light, 1 cheeky, 2 unhinged, 3 sickening. Untagged cards suit everyone;
+   level 0 PG, 1 Adults Only, 2 Unhinged. Untagged cards suit everyone;
    tagged cards only show up when someone playing matches a tag (city, culture, age, interest, setting). */
 const BANK_SRC = `
 object 0 : Kettle, Toaster, Doormat, TV remote, Ironing board, Coat hanger, Fridge magnet, Laundry basket, Smoke alarm, Vacuum cleaner, Alarm clock, Clothes peg, Extension cord, Wheelie bin, Tea towel, Hot water bottle, Umbrella, Stapler, Bubble wrap, Sticky note, Shopping trolley, Lava lamp, Rubber duck, Snow globe, Phone charger, Power bank, Air fryer, Robot vacuum, Electric toothbrush, Hair straighteners, Traffic cone, Sleeping bag, Inflatable flamingo, Novelty mug, Scented candle, Self-checkout, Pool noodle, Doorbell camera, Slow cooker, Massage chair
@@ -332,8 +332,7 @@ object 0 nz : Jandals, Buzzy Bee, Swanndri, L&P bottle
 object 1 : Hangover cure, Breathalyser, Fake ID, Push-up bra, Furry handcuffs, Edible undies, Hip flask, Beer bong, Shot glass, G-string, Hot tub, Whoopee cushion, Love letter, Body glitter, Spanx, Nicotine pouch
 object 1 au : Goon bag
 object 1 date : Massage oil, Rose petals, Dinner candle, Spare toothbrush, Matching pyjamas, Love lock, Mood lighting
-object 2 : Vibrator, Condom, Morning-after pill, Pregnancy test, Nipple tassels, Blow-up doll, Bong, Lube, Sex swing, Burner phone, Ankle monitor, Your ex's hoodie
-object 3 : Butt plug, Haemorrhoid cream, Used tissue, Toenail clippings, Bedpan, Sick bucket, Hairy soap, Sweaty gym sock, Crusty towel, Bin juice
+object 2 : Vibrator, Condom, Morning-after pill, Pregnancy test, Nipple tassels, Blow-up doll, Bong, Lube, Sex swing, Burner phone, Ankle monitor, Your ex's hoodie, Butt plug, Haemorrhoid cream, Used tissue, Toenail clippings, Bedpan, Sick bucket, Hairy soap, Sweaty gym sock, Crusty towel, Bin juice
 person 0 : Albert Einstein, Queen Elizabeth II, Shakespeare, Cleopatra, Barack Obama, Leonardo da Vinci, Oprah Winfrey, Charlie Chaplin, David Attenborough, Napoleon, Dolly Parton, Gordon Ramsay, Mr Bean, Harry Potter, Mickey Mouse, Batman, Sherlock Holmes, Shrek, Homer Simpson, Darth Vader, Spider-Man, Paddington Bear, Willy Wonka, Barbie, Kermit the Frog, Santa Claus, Tooth Fairy, James Bond, Winnie the Pooh, Your landlord, A wedding DJ, A tradie, A barista, A lollipop lady, A mime artist, A personal trainer, A fortune teller, A flight attendant, A substitute teacher, A parking inspector
 person 0 sport : Serena Williams, Usain Bolt, Cristiano Ronaldo, Lionel Messi, Michael Jordan, Tiger Woods, Simone Biles, LeBron James, Roger Federer, Muhammad Ali
 person 0 music : Taylor Swift, Beyoncé, Freddie Mercury, Elvis Presley, Lady Gaga, Elton John, Adele, Harry Styles, Ed Sheeran, Rihanna, Billie Eilish, Madonna, Michael Jackson, Dua Lipa, Sabrina Carpenter, Chappell Roan, Bad Bunny
@@ -355,8 +354,7 @@ person 0 family : Your nan, The favourite child, The black sheep, A mum on the s
 person 0 wedding : The bride, The best man, The mother of the bride, The flower girl, The celebrant, The ex who RSVP'd yes
 person 1 : Your ex, A drunk uncle, The hot neighbour, A bridezilla, A wine mum, A gym bro, A crypto bro, A gold digger, A sugar daddy, Your celebrity crush, A Tinder date, A cougar, A mansplainer, An influencer, A reality TV villain, A one-night stand, A pick-up artist
 person 1 date : Your first kiss, Your type, A red flag, The one that got away, A situationship, A hopeless romantic, A third wheel
-person 2 : A stripper, A sex therapist, Your ex's new partner, An OnlyFans creator, Hugh Hefner, A swinger, A hitman, A cult leader, A drug dealer, A streaker, A dominatrix, A fuckboy
-person 3 : A proctologist, A man who doesn't wash his hands, Someone clipping toenails on the bus, A serial farter, A mouth-breather on a plane, A nudist at Christmas lunch
+person 2 : A stripper, A sex therapist, Your ex's new partner, An OnlyFans creator, Hugh Hefner, A swinger, A hitman, A cult leader, A drug dealer, A streaker, A dominatrix, A fuckboy, A proctologist, A man who doesn't wash his hands, Someone clipping toenails on the bus, A serial farter, A mouth-breather on a plane, A nudist at Christmas lunch
 place 0 : The pub, IKEA, The dentist, A car boot sale, The post office, A hospital waiting room, A petrol station, A bus stop, A sauna, A school disco, A launderette, The gym, A roundabout, A rooftop bar, A drive-through, A campsite, A water park, A haunted house, Airport security, A hairdresser, A bowling alley, A library, A casino, A day spa, A bakery, A cinema, A car wash, An escape room, A karaoke booth, A theme park, A lift, The back seat of a taxi, A hotel lobby, A pet shop, A zoo, A supermarket at closing time
 place 0 work : The office kitchen, A Zoom call, The boardroom, The photocopier, A team-building day, The staff room, HR's office, The car park at 5pm
 place 0 family : Grandma's house, The kids' table, The school pick-up line, Parents' evening, A family barbecue, Christmas lunch
@@ -369,8 +367,7 @@ place 0 london : Big Ben, Tower Bridge, Buckingham Palace, Camden Market, Hyde P
 place 0 nyc : Times Square, Central Park, Statue of Liberty, Brooklyn Bridge, Empire State Building, Grand Central, The High Line, Broadway, Coney Island, Wall Street, Fifth Avenue, Madison Square Garden, Staten Island Ferry, The Met, SoHo, Williamsburg, Katz's Deli, JFK Airport, Little Italy
 place 0 paris : Eiffel Tower, The Louvre, Notre-Dame, Arc de Triomphe, Champs-Élysées, Montmartre, Moulin Rouge, The Seine, Versailles, Disneyland Paris, Le Marais, Père Lachaise, Shakespeare and Company, Galeries Lafayette, The Catacombs, Gare du Nord
 place 1 : Nightclub toilets, A hen do, A buck's night, Your ex's street, A beer garden at 3pm, A kebab shop at 3am, A hotel corridor at 2am, A hot tub at a party, The work Christmas party, The back of the bus, The smoking area, A foam party
-place 2 : A strip club, A sex shop, A nudist beach, A dodgy massage parlour, An STI clinic, A swingers' party, A police cell, A crime scene, A love motel
-place 3 : A festival portaloo, A public toilet with no lock, A sewer, A hostel bathroom, A morgue, A fishmonger's bin
+place 2 : A strip club, A sex shop, A nudist beach, A dodgy massage parlour, An STI clinic, A swingers' party, A police cell, A crime scene, A love motel, A festival portaloo, A public toilet with no lock, A sewer, A hostel bathroom, A morgue, A fishmonger's bin
 world 0 : Great Wall of China, Machu Picchu, Uluru, Grand Canyon, Niagara Falls, Mount Everest, Sahara, Amazon rainforest, Venice, Santorini, Bali, Tokyo, Iceland, Dubai, Hawaii, Antarctica, Pyramids of Giza, Taj Mahal, Las Vegas, Stonehenge, Great Barrier Reef, Swiss Alps, Rio de Janeiro, Colosseum, Petra, Eiffel Tower, Statue of Liberty, Leaning Tower of Pisa, Mount Fuji, The Dead Sea, Easter Island, Hollywood, Disneyland, The North Pole, The Bermuda Triangle, Mars, The Moon, Atlantis
 world 0 geography : Kazakhstan, Madagascar, Mongolia, Liechtenstein, The Equator, Greenland, Vatican City, Lake Titicaca, The Panama Canal, Mount Kilimanjaro, The Nile, Siberia, Death Valley, The Galápagos, The Andes, Fiji, Luxembourg, Patagonia, The Arctic Circle
 world 0 history : Pompeii, Troy, The Titanic, Chernobyl, The Berlin Wall, Area 51, Alcatraz, The Tower of London, Ancient Rome, Ancient Egypt, The Wild West, Babylon
@@ -382,8 +379,7 @@ world 0 film : Hogwarts, Narnia, Gotham City, Jurassic Park, Middle-earth, Sprin
 world 0 nz : Hobbiton, Milford Sound, Rotorua, Bay of Islands
 world 0 ie : Cliffs of Moher, Temple Bar, The Blarney Stone, Giant's Causeway
 world 1 : Ibiza, Magaluf, Las Vegas Strip, Schoolies, Spring break in Cancún, Khao San Road, A full moon party, Kavos
-world 2 : Amsterdam's Red Light District, Pattaya, The Playboy Mansion, Fyre Festival, A nudist resort
-world 3 : A cruise ship with norovirus, The Great Pacific Garbage Patch, Glastonbury on day five
+world 2 : Amsterdam's Red Light District, Pattaya, The Playboy Mansion, Fyre Festival, A nudist resort, A cruise ship with norovirus, The Great Pacific Garbage Patch, Glastonbury on day five
 action 0 : Juggling, Sneezing, Parallel parking, Brushing teeth, Skydiving, Knitting, Moonwalking, Whispering, Ironing, Proposing, Hiccuping, Snoring, Surfing, Bungee jumping, Tiptoeing, Sleepwalking, Haggling, Winking, Yawning, Gift wrapping, Busking, Doing a cartwheel, Photobombing, Planking, Assembling IKEA furniture, Doing the worm, Ghosting someone, Humble-bragging, Air guitar, Doing a TikTok dance, Double-dipping, Rage-quitting, Taking a selfie, Speed-walking, Eavesdropping, Sulking, Name-dropping, Overtaking, Oversharing, Pretending to listen
 action 0 sport : Dunking, Penalty shootout, Mexican wave, Diving for a penalty, Bowling a googly, Burpees, Celebrating a goal, Sledging, Lifting the trophy
 action 0 music : Head-banging, Crowd surfing, Lip-syncing, Beatboxing, Conducting an orchestra, Moshing, Doing the Macarena, Murdering karaoke
@@ -395,8 +391,7 @@ action 0 family : Teaching Gran to FaceTime, Carving the turkey, Arguing at Chri
 action 0 wedding : Catching the bouquet, Cutting the cake, The first dance, Giving the best man speech, Crying in the toilets, Throwing confetti
 action 0 au : Doing a shoey, Chucking a sickie, Throwing another shrimp on the barbie, Pashing
 action 1 : Skinny dipping, Twerking, Flirting, Drunk texting, Sliding into DMs, Stalking an ex on Instagram, Doing a body shot, Streaking, Kissing badly, Slow dancing, Pole dancing, Faking a phone call, Spooning, Netflix and chill, Hooking up, The walk of shame, Laughing at the boss's joke, Getting kicked out of a pub, Shotgunning a beer
-action 2 : Sexting, Sending a nude, Having a threesome, Faking an orgasm, Getting a Brazilian wax, Joining the mile-high club, Dirty talking, Hiding a body, Cheating, Getting arrested, Peeing in a pool, Smoking a joint, Getting a lap dance
-action 3 : Popping a pimple, Picking your nose, Clipping toenails, Farting in a lift, Vomiting in a taxi, Sniffing your armpit, Squeezing a blackhead, Eating a bogey, Pooing at a party, Following through, Wiping with a sock
+action 2 : Sexting, Sending a nude, Having a threesome, Faking an orgasm, Getting a Brazilian wax, Joining the mile-high club, Dirty talking, Hiding a body, Cheating, Getting arrested, Peeing in a pool, Smoking a joint, Getting a lap dance, Popping a pimple, Picking your nose, Clipping toenails, Farting in a lift, Vomiting in a taxi, Sniffing your armpit, Squeezing a blackhead, Eating a bogey, Pooing at a party, Following through, Wiping with a sock
 nature 0 : Volcano, Rainbow, Waterfall, Thunderstorm, Coral reef, Sunflower, Avalanche, Glacier, Octopus, High tide, Earthquake, Cactus, Hailstorm, Butterfly, Mushroom, Desert, Jellyfish, Full moon, Tornado, Fog, Sloth, Penguin, Flamingo, Hedgehog, Seagull stealing chips, Pigeon, Northern Lights, Solar eclipse, Quicksand, Venus flytrap, Shark, Chameleon, Peacock, Bee sting, Sunburn, Mosquito, Snail, Echo, Blobfish, Naked mole-rat, Sea cucumber
 nature 0 geography : Fjord, Monsoon, Tundra, Savanna, Geyser, Stalactite, Mangrove, Sand dune, River delta
 nature 0 au : Kangaroo, Koala, Platypus, Gum tree, Wombat, Swooping magpie, Drop bear, Cassowary, Huntsman spider, Box jellyfish, Kookaburra, Bin chicken, Quokka, Cane toad, Emu
@@ -404,8 +399,7 @@ nature 0 uk : Robin, Fox in a bin, Badger, Bluebells, Stinging nettles, Drizzle
 nature 0 nz : Kiwi bird, Kea stealing your sandwich, Pōhutukawa, Sheep
 nature 0 ie : Shamrock, Peat bog, Forty shades of green
 nature 1 : Dog humping a leg, Peacock showing off, Cockroach, Stink bug, Horny rabbits
-nature 2 : Praying mantis eating her mate, Duck mating season, A bonobo
-nature 3 : Monkey throwing poo, Seagull poo on your head, Maggots, Dung beetle, Tapeworm, Rotten egg, Cow pat, Blowfly, Dead fish
+nature 2 : Praying mantis eating her mate, Duck mating season, A bonobo, Monkey throwing poo, Seagull poo on your head, Maggots, Dung beetle, Tapeworm, Rotten egg, Cow pat, Blowfly, Dead fish
 random 0 : Birthday cake, Netflix, Bucket list, Group chat, Speeding ticket, Brunch, Selfie, Tax return, Spelling bee, Fire drill, Road trip, Secret Santa, Monday morning, Autocorrect, Dad joke, Pub quiz, Long weekend, Book club, Christmas jumper, Gap year, Out of office, Wi-Fi password, Buffering, Spoiler alert, Midlife crisis, Plot twist, Main character energy, Small talk, Jazz hands, Brain freeze, Déjà vu, Food coma, Free sample, Terms and conditions, Captcha, The ick, Unread emails, Daylight saving
 random 0 genz : Rizz, Delulu, Skibidi toilet, Ate and left no crumbs, NPC, Brain rot, Touch grass, Slay, Aura points
 random 0 millennial : Avocado toast, MSN Messenger, Myspace top 8, Harlem Shake, Ice bucket challenge, Pokémon Go, Gangnam Style, Fidget spinner
@@ -423,8 +417,7 @@ random 0 date : First-date nerves, Love language, Red flag, Green flag, Soft lau
 random 0 icebreaker : Two truths and a lie, Fun fact about me, Guilty pleasure, Desert island, Hidden talent
 random 1 : Hangover, Beer goggles, Booty call, Friends with benefits, Morning breath, Muffin top, Nip slip, Wardrobe malfunction, Thirst trap, Tan lines, Builder's bum, Daddy issues, Wingman, Hall pass, Body count, Love bombing, Breadcrumbing, Sunday scaries
 random 1 dark : Funeral playlist, Reading of the will, Existential dread, Haunted doll, Mortgage stress, Burnout, Your search history
-random 2 : Morning wood, STI, The pull-out method, Dick pic, Love bite, Safe word, Sugar baby, Prenup, Divorce lawyer, Blue balls, Camel toe, Brewer's droop, Kink shaming
-random 3 : Skid marks, Bum sweat, Swamp ass, Shart, Toe jam, Ear wax, Dandruff, Bacne, Projectile vomit, Diarrhoea, Belly button fluff, Morning-after smell
+random 2 : Morning wood, STI, The pull-out method, Dick pic, Love bite, Safe word, Sugar baby, Prenup, Divorce lawyer, Blue balls, Camel toe, Brewer's droop, Kink shaming, Skid marks, Bum sweat, Swamp ass, Shart, Toe jam, Ear wax, Dandruff, Bacne, Projectile vomit, Diarrhoea, Belly button fluff, Morning-after smell
 `;
 function parseBank(src) {
   const out = [];
@@ -438,7 +431,7 @@ function parseBank(src) {
 const BUILT_IN = parseBank(BANK_SRC);
 
 /* Pre-filled team names, each with the lowest rudeness level it suits. Built from team-names.xlsx. */
-/* TEAM_NAMES:start */const TEAM_NAMES = [["Wankers",3],["Slags",3],["Shaggers",3],["Scrotes",3],["Nonces",3],["Boozers",0],["Scumbags",2],["Hags",2],["Epstein's Guestlist",3],["Cunt Collective",3],["Slag Syndicate",2],["Gold Diggers",2],["Gaslighters",2],["Usual Suspects",0],["Slappers",2],["Paedos",3],["Commies",1],["Leeches",0],["Parasites",0],["Scallywags",1],["Bottom Feeders",0],["Vultures",0],["Maggots",0],["Rodents",0],["Gobshites",2],["Narcissists",0],["Cheapskates",0],["Charlatans",0],["Munters",0],["Scroungers",0],["Trolls",0],["Ratbags",0],["Rotters",0],["Traitors",0],["Wet Wipes",0],["Failures",0]];/* TEAM_NAMES:end */
+/* TEAM_NAMES:start */const TEAM_NAMES = [["Wankers",2],["Slags",2],["Shaggers",2],["Scrotes",2],["Nonces",2],["Boozers",0],["Scumbags",2],["Hags",2],["Epstein's Guestlist",2],["Cunt Collective",2],["Slag Syndicate",2],["Gold Diggers",2],["Gaslighters",2],["Usual Suspects",0],["Slappers",2],["Paedos",2],["Commies",1],["Leeches",0],["Parasites",0],["Scallywags",1],["Bottom Feeders",0],["Vultures",0],["Maggots",0],["Rodents",0],["Gobshites",2],["Narcissists",0],["Cheapskates",0],["Charlatans",0],["Munters",0],["Scroungers",0],["Trolls",0],["Ratbags",0],["Rotters",0],["Traitors",0],["Wet Wipes",0],["Failures",0]];/* TEAM_NAMES:end */
 function pickTeamNames(n, boundary, taken = []) {
   const free = t => !taken.includes(t[0]);
   const exact = shuffle(TEAM_NAMES.filter(t => t[1] === boundary && free(t)).map(t => t[0]));
@@ -517,7 +510,11 @@ function defaultProfile() {
 }
 function mergeProfile(p) {
   const d = defaultProfile();
-  return { ...d, ...p, prefs: { ...d.prefs, ...(p?.prefs || {}) }, setup: { ...d.setup, ...(p?.setup || {}) }, words: { ...(p?.words || {}) } };
+  const m = { ...d, ...p, prefs: { ...d.prefs, ...(p?.prefs || {}) }, setup: { ...d.setup, ...(p?.setup || {}) }, words: { ...(p?.words || {}) } };
+  // Older saves used four levels; the top one is now part of Unhinged
+  m.prefs.boundary = Math.min(m.prefs.boundary, MAX_LEVEL);
+  m.setup.boundary = Math.min(m.setup.boundary, MAX_LEVEL);
+  return m;
 }
 let profile = (() => { try { const r = localStorage.getItem(PROFILE_KEY); if (r) return mergeProfile(JSON.parse(r)); } catch (e) {} return defaultProfile(); })();
 let profileTimer;
@@ -668,7 +665,7 @@ Rules:
 - "place" means local or everyday places; "world" means countries, cities and landmarks.
 - Most cards should be specific to these players: their city, culture, age group, interests and humour, so it feels written for them. Mix in a few everyone knows.
 - Every card is 1 to 4 words, something this group would recognise and could describe in 30 seconds. No duplicates.
-- Match the boundary. Light is clean. Cheeky is innuendo, hangovers, dating, mild swearing. Unhinged is sex, drugs and chaos. Sickening adds gross-out bodily stuff.
+- Match the boundary. PG is clean. Adults Only is innuendo, hangovers, dating, sex and swearing. Unhinged has nothing off limits: sex, drugs, chaos and gross-out bodily stuff.
 - Never punch down: no slurs, nothing mocking race, religion, disability, gender or sexuality, and no real private people.
 
 Reply with only JSON in this shape: {"object":["..."],"person":["..."],"place":["..."],"world":["..."],"action":["..."],"nature":["..."],"random":["..."]}`;
@@ -763,7 +760,7 @@ function renderWelcome() {
     `<img class="logo" src="img/logo.png" alt="What You Sayin">
      ${filler()}
      <div class="panel" style="gap:6px"><h3>Enter with caution</h3>
-       <p class="small">Some cards are rude. Some are ruder. You set how far it goes. Past Cheeky is 18+. Don't play Sickening with your nan. Or do. We're not your mum.</p></div>`,
+       <p class="small">Some cards are rude. Some are ruder. You set how far it goes. Adults Only and Unhinged are 18+. Don't play Unhinged with your nan. Or do. We're not your mum.</p></div>`,
     `<input class="input" id="nick" maxlength="24" autocomplete="nickname" value="${esc(profile.nick)}" placeholder="What do we call you?" aria-label="Your name">
      <button class="btn big yellow" data-act="enter">It's play time</button>`,
     true);
@@ -812,7 +809,7 @@ function renderMe() {
   else body = `
     <h3>Boundaries</h3>
     <div class="seg">${LEVELS.map((l, i) => `<button class="chip" data-pref="boundary" data-val="${i}" aria-pressed="${p.boundary === i}" ${kid && i > 0 ? "disabled" : ""}>${l.name}</button>`).join("")}</div>
-    <p class="hint">${kid ? "Under 18s play on Light. Sorry, rules." : esc(LEVELS[p.boundary].desc)}</p>
+    <p class="hint">${kid ? "Under 18s play on PG. Sorry, rules." : esc(LEVELS[p.boundary].desc)}</p>
     <h3>Usual game setting</h3>${chipsHtml("setting", SETTINGS, p.setting, false)}
     <div class="panel" style="gap:6px"><h3>We're watching</h3>
       <p class="muted small">You've saved ${profile.saved.length} card${profile.saved.length === 1 ? "" : "s"} and binned ${profile.rejected.length}. Binned cards never come back. Next we'll use what you save and skip to learn what makes you laugh.</p></div>
@@ -850,7 +847,7 @@ function renderDeckTab() {
     body = `
       <p class="muted small">${BUILT_IN.length} built-in cards${useBuiltIn ? "" : " (switched off)"} and ${IMPORTED.length} from your spreadsheet. Everyone only gets the ones that fit them: city, culture, age, interests, setting and boundary.</p>
       ${CAP.canEdit ? `
-        <div class="fmt">Columns: <b>word</b>, <b>category</b> (object, person, place, world, action, nature, random), <b>level</b> (light, cheeky, unhinged, sickening), <b>tags</b> (optional, spaces between). Tags: sydney melbourne brisbane london nyc paris · au uk us ie nz · genz millennial genx boomer · sport travel music food geography history film fashion · work date family wedding icebreaker · dark.</div>
+        <div class="fmt">Columns: <b>word</b>, <b>category</b> (object, person, place, world, action, nature, random), <b>level</b> (PG, Adults Only, Unhinged), <b>tags</b> (optional, spaces between). Tags: sydney melbourne brisbane london nyc paris · au uk us ie nz · genz millennial genx boomer · sport travel music food geography history film fashion · work date family wedding icebreaker · dark.</div>
         <label class="check"><input type="checkbox" id="keep-builtin" ${useBuiltIn ? "checked" : ""}> Keep the built-in cards as well</label>
         <div class="row">
           <label class="btn blue" for="bank-file">Load spreadsheet</label>
@@ -1560,7 +1557,7 @@ function loadXLSX() {
     document.head.appendChild(s);
   });
 }
-const LEVEL_WORDS = { light: 0, clean: 0, cheeky: 1, unhinged: 2, sickening: 3 };
+const LEVEL_WORDS = { pg: 0, light: 0, clean: 0, "adults only": 1, cheeky: 1, unhinged: 2, sickening: 2 };
 async function importBank(file) {
   const status = $("#import-status"); const say = m => { if (status) status.textContent = m; };
   say("Reading " + file.name + "…");
@@ -1576,7 +1573,7 @@ async function importBank(file) {
     const w = r.word || r.card || r.words;
     const cat = (r.category || r.cat || "").toLowerCase();
     const lv = (r.level || r.boundary || "light").toLowerCase();
-    const lvl = lv in LEVEL_WORDS ? LEVEL_WORDS[lv] : /^[0-3]$/.test(lv) ? +lv : null;
+    const lvl = lv in LEVEL_WORDS ? LEVEL_WORDS[lv] : /^[0-3]$/.test(lv) ? Math.min(+lv, MAX_LEVEL) : null;
     if (!w || !CAT_IDS.includes(cat) || lvl == null) { bad.push(i + 2); return; }
     cards.push([w.slice(0, 60), cat, lvl, (r.tags || "").toLowerCase().split(/[\s,]+/).filter(Boolean)]);
   });

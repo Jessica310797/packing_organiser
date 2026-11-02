@@ -10,7 +10,8 @@ const ExcelJS = require("exceljs");
 const root = path.join(__dirname, "..");
 const pagePath = path.join(root, "web", "index.html");
 const CATEGORIES = ["object", "person", "place", "world", "action", "nature", "random"];
-const LEVELS = { light: 0, cheeky: 1, unhinged: 2, sickening: 3 };
+// PG, Adults Only, Unhinged. The older four level names still work: Sickening counts as Unhinged.
+const LEVELS = { pg: 0, "adults only": 1, unhinged: 2, light: 0, cheeky: 1, sickening: 2 };
 
 async function readCards(file) {
   const wb = new ExcelJS.Workbook();

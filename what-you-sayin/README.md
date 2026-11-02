@@ -61,7 +61,7 @@ which. Reload the app in Expo Go to see the new cards, then commit
 ## Editing the team names
 
 New games fill in team names at random from **`team-names.xlsx`** (Name and
-Level columns), using names for the rudeness level the players pick, with
+Level columns), using names for the level the players pick (PG, Adults Only or Unhinged), with
 milder names filling any gaps. Edit it the same way as `cards.xlsx`, then
 run `npm run build-html`. Players can still type their own names, or tap
 New names to re-roll.
