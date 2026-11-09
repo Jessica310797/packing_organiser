@@ -33,7 +33,7 @@ is for a different SDK, upgrade with `npm install expo@^<version>` and then
 - Quick fire, and new games where you pass one phone around
 - Preferences, saved and binned cards, and your own words. These stay on
   the phone between launches.
-- The built-in bank of 1,206 cards, filtered by everyone's preferences
+- The card bank from `cards.xlsx` (1,842 cards), filtered by everyone's preferences
 
 Not in the app yet. These rely on the Claude-hosted version's shared
 storage and Claude access, so they need a backend first:
@@ -54,8 +54,9 @@ npm run build-html
 ```
 
 That loads the cards into the game. Rows with a missing word, an unknown
-category or level, or a comma in the word are skipped, and the command says
-which. Reload the app in Expo Go to see the new cards, then commit
+category or level, or a card already in that category are skipped, and the
+command says which. Levels can be written PG, Adults Only or Unhinged (or
+Mild, Spicy/Spicey, Light, Cheeky, Sickening). Reload the app in Expo Go to see the new cards, then commit
 `cards.xlsx`, `web/index.html` and `src/gameHtml.ts`.
 
 ## Editing the team names

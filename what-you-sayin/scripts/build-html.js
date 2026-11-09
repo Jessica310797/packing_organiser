@@ -11,24 +11,27 @@ const root = path.join(__dirname, "..");
 const pagePath = path.join(root, "web", "index.html");
 const CATEGORIES = ["object", "person", "place", "world", "action", "nature", "random"];
 // PG, Adults Only, Unhinged. The older four level names still work: Sickening counts as Unhinged.
-const LEVELS = { pg: 0, "adults only": 1, unhinged: 2, light: 0, cheeky: 1, sickening: 2 };
+const LEVELS = { pg: 0, "adults only": 1, unhinged: 2, light: 0, mild: 0, cheeky: 1, spicy: 1, spicey: 1, sickening: 2 };
 
 async function readCards(file) {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(file);
   const ws = wb.getWorksheet("Cards") || wb.worksheets[0];
   const text = v => (v && typeof v === "object" ? (v.text ?? v.result ?? (v.richText || []).map(r => r.text).join("")) : v ?? "").toString().trim();
-  const cards = [], problems = [];
+  const cards = [], problems = [], seen = new Set();
   ws.eachRow((row, n) => {
     if (n === 1) return;
     const [word, cat, lvl, tags] = [1, 2, 3, 4].map(i => text(row.getCell(i).value));
     if (!word && !cat && !lvl) return;
     const c = cat.toLowerCase(), l = lvl.toLowerCase();
     if (!word) return problems.push(`row ${n}: no word`);
-    if (/[,`]|\$\{/.test(word)) return problems.push(`row ${n}: "${word}" has a comma or backtick`);
     if (!CATEGORIES.includes(c)) return problems.push(`row ${n}: unknown category "${cat}"`);
     if (!(l in LEVELS)) return problems.push(`row ${n}: unknown level "${lvl}"`);
-    cards.push({ word, cat: c, lvl: LEVELS[l], tags: tags.toLowerCase().split(/[\s,]+/).filter(Boolean).sort().join(" ") });
+    if (word.length > 60) return problems.push(`row ${n}: "${word}" is over 60 characters`);
+    const key = c + ":" + word.toLowerCase();
+    if (seen.has(key)) return problems.push(`row ${n}: "${word}" is already in ${cat}`);
+    seen.add(key);
+    cards.push({ word, cat: c, lvl: LEVELS[l], tags: tags.toLowerCase().split(/[\s,]+/).filter(Boolean).sort() });
   });
   return { cards, problems };
 }
@@ -53,17 +56,6 @@ async function readTeamNames(file) {
   return { names, problems };
 }
 
-// Same format as BANK_SRC in the game: "category level tags : card, card, card"
-function toBankSrc(cards) {
-  const groups = new Map();
-  for (const c of cards) {
-    const head = [c.cat, c.lvl, c.tags].filter(x => x !== "").join(" ");
-    if (!groups.has(head)) groups.set(head, []);
-    groups.get(head).push(c.word);
-  }
-  return "\n" + [...groups].map(([head, words]) => `${head} : ${words.join(", ")}`).join("\n") + "\n";
-}
-
 async function main() {
   let page = fs.readFileSync(pagePath, "utf8");
 
@@ -72,9 +64,9 @@ async function main() {
     const { cards, problems } = await readCards(xlsx);
     problems.forEach(p => console.warn("Skipped " + p));
     if (!cards.length) throw new Error("cards.xlsx has no usable cards, so nothing was changed.");
-    const start = page.indexOf("const BANK_SRC = `") + "const BANK_SRC = `".length;
-    const end = page.indexOf("`;", start);
-    page = page.slice(0, start) + toBankSrc(cards) + page.slice(end);
+    const json = JSON.stringify(cards.map(c => [c.word, c.cat, c.lvl, c.tags])).replace(/<\//g, "<\\/");
+    page = page.replace(/\/\* BANK_JSON:start \*\/[\s\S]*?\/\* BANK_JSON:end \*\//,
+      () => `/* BANK_JSON:start */const BANK_JSON = ${json};/* BANK_JSON:end */`);
     fs.writeFileSync(pagePath, page);
     console.log(`Loaded ${cards.length} cards from cards.xlsx${problems.length ? ` (skipped ${problems.length} rows)` : ""}`);
   }
