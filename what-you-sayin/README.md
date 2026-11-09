@@ -33,7 +33,7 @@ is for a different SDK, upgrade with `npm install expo@^<version>` and then
 - Quick fire, and new games where you pass one phone around
 - Preferences, saved and binned cards, and your own words. These stay on
   the phone between launches.
-- The card bank from `cards.xlsx` (1,842 cards), filtered by everyone's preferences
+- The card bank from `cards.xlsx` (3,561 cards), filtered by everyone's preferences
 
 Not in the app yet. These rely on the Claude-hosted version's shared
 storage and Claude access, so they need a backend first:

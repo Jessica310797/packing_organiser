@@ -11,6 +11,7 @@ const root = path.join(__dirname, "..");
 const pagePath = path.join(root, "web", "index.html");
 const CATEGORIES = ["object", "person", "place", "world", "action", "nature", "random"];
 // PG, Adults Only, Unhinged. The older four level names still work: Sickening counts as Unhinged.
+const ALIASES = { people: "person", actions: "action", places: "place", objects: "object" };
 const LEVELS = { pg: 0, "adults only": 1, unhinged: 2, light: 0, mild: 0, cheeky: 1, spicy: 1, spicey: 1, sickening: 2 };
 
 async function readCards(file) {
@@ -23,7 +24,7 @@ async function readCards(file) {
     if (n === 1) return;
     const [word, cat, lvl, tags] = [1, 2, 3, 4].map(i => text(row.getCell(i).value));
     if (!word && !cat && !lvl) return;
-    const c = cat.toLowerCase(), l = lvl.toLowerCase();
+    const c = ALIASES[cat.toLowerCase()] || cat.toLowerCase(), l = lvl.toLowerCase();
     if (!word) return problems.push(`row ${n}: no word`);
     if (!CATEGORIES.includes(c)) return problems.push(`row ${n}: unknown category "${cat}"`);
     if (!(l in LEVELS)) return problems.push(`row ${n}: unknown level "${lvl}"`);
