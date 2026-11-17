@@ -28,6 +28,20 @@ Expo Go only opens one SDK version at a time. If it ever says the project
 is for a different SDK, upgrade with `npm install expo@^<version>` and then
 `npx expo install --fix`.
 
+## How a full game works
+
+A game deals one **bucket** of cards (20, 40 or 60) and plays it three
+times, each round harder than the last:
+
+1. **Describe it**: say anything except the word itself.
+2. **One word**: one word per card.
+3. **Act it out**: no words at all.
+
+Teams take timed turns pulling cards from the bucket. Guessed cards leave
+the bucket for that round; skipped ones go back in. When it's empty the
+round ends and every card goes back in for the next one. Points add up
+across all three rounds. Quick fire is a single 60-second round instead.
+
 ## What works in the app
 
 - Quick fire, and new games where you pass one phone around

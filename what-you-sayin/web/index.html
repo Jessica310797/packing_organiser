@@ -506,7 +506,7 @@ function defaultProfile() {
     accepted: false, updatedAt: 0, nick: "",
     prefs: { age: "", city: "", nationality: "", culture: "", languages: "", interests: [], humour: [], boundary: 1, setting: "friends" },
     words: {}, saved: [], rejected: [],
-    setup: { boundary: 1, setting: "friends", rounds: 4, seconds: 45, ai: true, mode: "pass", teams: [{ name: "Team 1", players: "" }, { name: "Team 2", players: "" }], names: "", autoNames: true },
+    setup: { boundary: 1, setting: "friends", bucket: 40, seconds: 45, ai: true, mode: "pass", teams: [{ name: "Team 1", players: "" }, { name: "Team 2", players: "" }], names: "", autoNames: true },
     ai: null,
   };
 }
@@ -686,6 +686,60 @@ Reply with only JSON in this shape: {"object":["..."],"person":["..."],"place":[
 
 /* ============ Turn engine (shared by one-phone and group games) ============ */
 const MAX_SKIPS = 3;
+/* Full games: three rounds played over one bucket of cards */
+const ROUNDS = [
+  { name: "Describe it", rule: "Say anything you like, except the word itself, a rhyme or \"sounds like\".", call: "Call it if they say the word or a rhyme." },
+  { name: "One word", rule: "One word per card. That's all you get, so make it count.", call: "Call it if they say more than one word." },
+  { name: "Act it out", rule: "No words at all. Act it out.", call: "Call it if they say anything at all." },
+];
+const BUCKET_SIZES = [[20, "Quick · 20"], [40, "Standard · 40"], [60, "Long · 60"]];
+const ROUND_TILES = ["c-orange", "c-blue", "c-plum"];
+function makeBucket(deck, n) {
+  deck = clone(deck);
+  const out = [];
+  while (out.length < n) {
+    const cats = CAT_IDS.filter(c => deck[c]?.length);
+    if (!cats.length) break;
+    const c = deck[pick(cats)].shift();
+    out.push([c.w, c.cat]);
+  }
+  return out;
+}
+const freshRound = (bucket, binned) => shuffle(bucket.map((_, i) => i).filter(i => !binned.includes(i)));
+// A card from what's left in the bucket this round, never one already seen this turn
+function bucketDraw(bucket, remaining, turn) {
+  const seen = new Set((turn?.cards || []).map(c => key(c.cat, c.w)));
+  const options = remaining.filter(i => !seen.has(key(bucket[i][1], bucket[i][0])));
+  if (!options.length) return null;
+  const [w, cat] = bucket[pick(options)];
+  return { w, cat };
+}
+// After a turn, guessed cards leave the bucket for this round and binned ones for good
+function settleBucket(bucket, remaining, binned, turn) {
+  const idx = c => bucket.findIndex(([w, cat]) => w === c.w && cat === c.cat);
+  const got = new Set(turn.cards.filter(c => c.res === "got").map(idx));
+  const bin = new Set([...binned, ...turn.cards.filter(c => c.res === "bin").map(idx)].filter(i => i >= 0));
+  return { remaining: remaining.filter(i => !got.has(i) && !bin.has(i)), binned: [...bin] };
+}
+// Cards left in the bucket while a turn is running
+const leftInBucket = (remaining, turn) => remaining.length - (turn?.cards || []).filter(c => c.res === "got" || c.res === "bin").length;
+function nextLabel(remainingAfter, round, nextTeamName) {
+  if (remainingAfter > 0) return `Next: ${nextTeamName}`;
+  return round >= ROUNDS.length ? "See who won" : `Round ${round + 1}: ${ROUNDS[round].name}`;
+}
+function bucketNote(remainingAfter, round) {
+  if (remainingAfter > 0) return `${remainingAfter} card${remainingAfter === 1 ? "" : "s"} left in the bucket.`;
+  return round >= ROUNDS.length ? "The bucket's empty. That's the game." : `The bucket's empty. Round ${round} done!`;
+}
+function roundIntroHtml(round, size, head, foot) {
+  const r = ROUNDS[round - 1];
+  return screen(head,
+    `<div class="tile ${ROUND_TILES[round - 1]} grow"><span class="sm">Round ${round} of ${ROUNDS.length}</span><span class="lg">${r.name}</span></div>
+     <p class="quip center">${esc(r.rule)}</p>
+     <p class="muted center small">${round === 1 ? `There are ${size} cards in the bucket, and every round uses the same ones. Try to remember them.` : `Same ${size} cards as last round. Remember them?`}</p>`,
+    foot, true);
+}
+
 function blankTurn(extra) { return { phase: "pass", left: 0, endsAt: 0, cards: [], cur: -1, skips: 0, ...extra }; }
 const turnScore = t => t.cards.filter(c => c.res === "got").length;
 const skippedCards = t => t.cards.map((c, i) => ({ ...c, i })).filter(c => (c.res === "skip" || c.res === "park") && c.i !== t.cur);
@@ -693,7 +747,7 @@ const skippedCards = t => t.cards.map((c, i) => ({ ...c, i })).filter(c => (c.re
 function applyAct(t, act, arg, draw) {
   t = clone(t);
   const cur = t.cards[t.cur];
-  const next = () => { const c = draw(); if (!c) { t.phase = "done"; return; } t.cards.push({ w: c.w, cat: c.cat, res: null }); t.cur = t.cards.length - 1; };
+  const next = () => { const c = draw(t); if (!c) { t.phase = "done"; return; } t.cards.push({ w: c.w, cat: c.cat, res: null }); t.cur = t.cards.length - 1; };
   switch (act) {
     case "start": if (t.cur < 0) next(); t.phase = t.phase === "done" ? "done" : "run"; t.endsAt = Date.now() + t.left; break;
     case "pause": t.left = Math.max(0, t.endsAt - Date.now()); t.phase = "paused"; break;
@@ -870,7 +924,7 @@ function setupPeople() { return [profile.prefs]; }
 function renderSetup() {
   const st = profile.setup, kid = profile.prefs.age === "Under 18", p = profile.prefs, step = S.step;
   const vibe = [p.city, p.nationality, ...(p.interests || []).map(i => INTERESTS.find(x => x[0] === i)?.[1]), ...(p.humour || [])].filter(Boolean);
-  const titles = ["", "The vibe", "The time", "The players"];
+  const titles = ["", "The vibe", "The bucket", "The players"];
   let body = "";
   if (step === 1) body = `
     <h3>What's the occasion?</h3>${chipsHtml("s-setting", SETTINGS, st.setting, false)}
@@ -881,9 +935,12 @@ function renderSetup() {
     ${CAP.sample ? `<label class="check"><input type="checkbox" id="s-ai" ${st.ai ? "checked" : ""}><span><b>Write fresh cards for us with AI.</b> Takes up to a minute and uses your Claude usage.</span></label>` : ""}
     ${filler()}`;
   else if (step === 2) body = `
-    <h3>How long have you got?</h3>${chipsHtml("s-rounds", [[2, "10 minutes"], [4, "Half an hour"], [8, "All night"]], st.rounds, false)}
+    <h3>How many cards in the bucket?</h3>${chipsHtml("s-bucket", BUCKET_SIZES, st.bucket, false)}
     <h3>Seconds per turn</h3>${chipsHtml("s-seconds", [[30, "30"], [45, "45"], [60, "60"]], st.seconds, false)}
-    <p class="hint">${st.rounds} round${st.rounds === 1 ? "" : "s"}: every team gets ${st.rounds} turn${st.rounds === 1 ? "" : "s"} of ${st.seconds} seconds.</p>
+    <div class="panel" style="gap:6px">
+      <p class="small"><b>Three rounds, same ${st.bucket} cards.</b> A round ends when the bucket's empty, then every card goes back in.</p>
+      ${ROUNDS.map((r, i) => `<p class="small"><b>${i + 1}. ${r.name}:</b> ${esc(r.rule)}</p>`).join("")}
+    </div>
     ${filler()}`;
   else body = `
     <div class="seg">
@@ -930,7 +987,7 @@ function startLocal(kind) {
     : st.teams.map((t, i) => ({ name: t.name.trim() || `Team ${i + 1}`, players: parseList(t.players) }));
   const opts = quick
     ? { boundary: profile.prefs.boundary, setting: profile.prefs.setting, seconds: 60, rounds: 1 }
-    : { boundary: st.boundary, setting: st.setting, seconds: st.seconds, rounds: st.rounds };
+    : { boundary: st.boundary, setting: st.setting, seconds: st.seconds, rounds: ROUNDS.length };
   const run = async () => {
     let ai = [];
     if (!quick && st.ai && CAP.sample) {
@@ -939,9 +996,11 @@ function startLocal(kind) {
       S.cooking = false;
     } else if (quick && profile.ai?.cards) ai = profile.ai.cards;
     const deckOpts = { people: setupPeople(), boundary: opts.boundary, setting: opts.setting, words: [profile.words], ai };
+    const deck = buildDeck(deckOpts);
+    const bucket = quick ? [] : makeBucket(deck, st.bucket || 40);
     game = {
-      kind, ...opts, deckOpts, deck: buildDeck(deckOpts),
-      teams: teams.map(t => ({ ...t, score: 0 })), round: 1, teamIdx: 0, rot: {}, log: [], over: false,
+      kind, ...opts, deckOpts, deck, bucket, remaining: freshRound(bucket, []), binned: [], intro: !quick,
+      teams: teams.map(t => ({ ...t, score: 0, rounds: [0, 0, 0] })), round: 1, teamIdx: 0, rot: {}, log: [], over: false,
     };
     game.turn = newLocalTurn();
     go("play");
@@ -953,7 +1012,8 @@ function newLocalTurn() {
   const r = game.rot[game.teamIdx] || 0;
   return blankTurn({ team: game.teamIdx, left: game.seconds * 1000, describer: t.players.length ? t.players[r % t.players.length] : "" });
 }
-function localDraw() {
+function localDraw(turn) {
+  if (game.kind !== "quick") return bucketDraw(game.bucket, game.remaining, turn);
   let cats = CAT_IDS.filter(c => game.deck[c]?.length);
   if (!cats.length) { game.deck = buildDeck(game.deckOpts); cats = CAT_IDS.filter(c => game.deck[c]?.length); if (!cats.length) return null; toast("Deck reshuffled"); }
   return game.deck[pick(cats)].shift();
@@ -961,40 +1021,52 @@ function localDraw() {
 function renderLocalPlay() {
   const g = game; if (!g) { S.view = "tabs"; return renderHome(); }
   const t = g.turn, team = g.teams[t.team];
-  const roundLine = g.kind === "quick" ? "Quick fire" : `Round ${g.round} of ${g.rounds}`;
+  const quick = g.kind === "quick", round = ROUNDS[g.round - 1];
+  const roundLine = quick ? "Quick fire" : `Round ${g.round} of ${ROUNDS.length} · ${round.name}`;
   const scores = g.teams.length > 1 ? miniScores(g.teams.map((x, i) => ({ name: x.name, score: x.score, i }))) : "";
+  if (!quick && g.intro) {
+    return roundIntroHtml(g.round, g.bucket.length, backBar("Home", "home", `<span class="label">Round ${g.round} of ${ROUNDS.length}</span>`),
+      `${scores}<button class="btn big yellow" data-act="round-go">${g.round === 1 ? "Let's go" : `Start round ${g.round}`}</button>`);
+  }
   if (t.phase === "pass") {
     return screen(
       backBar("Home", "home", `<span class="label">${roundLine}</span>`),
       `${g.kind === "quick" ? `<div class="tile c-blue grow"><span class="sm">Describe as many as you can</span><span class="lg">60 seconds</span></div>`
           : `<div class="tile c-orange grow"><span class="sm">Pass the phone to</span><span class="lg">${esc(t.describer || team.name)}</span></div>`}
        ${filler()}
-       <p class="muted center small">${t.describer ? `${esc(team.name)} are guessing. ` : ""}No saying the word, rhymes or "sounds like". ${MAX_SKIPS} skips. ${g.seconds} seconds.</p>`,
+       <p class="muted center small">${t.describer ? `${esc(team.name)} are guessing. ` : ""}${quick ? `No saying the word, rhymes or "sounds like".` : `<b>${round.name}:</b> ${esc(round.rule)} ${g.remaining.length} cards left in the bucket.`} ${MAX_SKIPS} skips. ${g.seconds} seconds.</p>`,
       `${scores}<button class="btn big yellow" data-act="t-start">I'm ready</button>`, true);
   }
-  if (t.phase === "done") return turnSummaryHtml(t, team.name, true, g.teams.length > 1 ? g.teams.map((x, i) => ({ name: x.name, score: x.score + (i === t.team ? turnScore(t) : 0), i })) : null, nextLabelLocal());
-  return turnPlayHtml(t, { teamName: team.name, seconds: g.seconds, role: "describer", boundary: g.boundary });
-}
-function nextLabelLocal() {
-  const g = game;
-  const lastTeam = g.teamIdx === g.teams.length - 1;
-  if (lastTeam && g.round >= g.rounds) return "See who won";
-  return `Next: ${g.teams[(g.teamIdx + 1) % g.teams.length].name}`;
+  if (t.phase === "done") {
+    const board = g.teams.length > 1 ? g.teams.map((x, i) => ({ name: x.name, score: x.score + (i === t.team ? turnScore(t) : 0), i })) : null;
+    if (quick) return turnSummaryHtml(t, team.name, true, board, "See your score");
+    const after = settleBucket(g.bucket, g.remaining, g.binned, t).remaining.length;
+    return turnSummaryHtml(t, team.name, true, board, nextLabel(after, g.round, g.teams[(g.teamIdx + 1) % g.teams.length].name), "", bucketNote(after, g.round));
+  }
+  return turnPlayHtml(t, { teamName: team.name, seconds: g.seconds, role: "describer", boundary: g.boundary,
+    sub: quick ? "" : `${round.name} · ${leftInBucket(g.remaining, t)} left in the bucket`, roundName: quick ? "" : round.name });
 }
 function finishLocalTurn() {
   const g = game, t = g.turn, got = turnScore(t);
   g.teams[t.team].score += got;
-  g.log.push({ team: t.team, got, by: t.describer, skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w), binned: t.cards.filter(c => c.res === "bin").length });
+  g.teams[t.team].rounds[g.round - 1] += got;
+  g.log.push({ team: t.team, round: g.round, got, by: t.describer, skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w), binned: t.cards.filter(c => c.res === "bin").length });
   g.rot[t.team] = (g.rot[t.team] || 0) + 1;
   g.teamIdx = (g.teamIdx + 1) % g.teams.length;
-  if (g.teamIdx === 0) g.round++;
-  if (g.round > g.rounds) { g.over = true; holdScreen(false); go("results"); return; }
+  if (g.kind === "quick") { g.over = true; holdScreen(false); go("results"); return; }
+  Object.assign(g, settleBucket(g.bucket, g.remaining, g.binned, t));
+  if (!g.remaining.length) {
+    g.round++;
+    g.remaining = g.round <= ROUNDS.length ? freshRound(g.bucket, g.binned) : [];
+    if (!g.remaining.length) { g.over = true; holdScreen(false); go("results"); return; }
+    g.intro = true;
+  }
   g.turn = newLocalTurn();
   render(); window.scrollTo(0, 0);
 }
 function renderLocalResults() {
   const g = game; if (!g) { S.view = "tabs"; return renderHome(); }
-  return resultsHtml(g.teams.map((t, i) => ({ name: t.name, score: t.score, i })), g.log, g.kind, (i) => g.teams[i]?.name);
+  return resultsHtml(g.teams.map((t, i) => ({ name: t.name, score: t.score, i, rounds: g.kind === "quick" ? null : t.rounds })), g.log, g.kind, (i) => g.teams[i]?.name);
 }
 
 /* ============ Shared play UI ============ */
@@ -1004,7 +1076,7 @@ function miniScores(rows) {
   return `<div class="mini-scores">${sorted.map((r, pos) => `<span class="ms ${pos === 0 && r.score > 0 ? "lead" : ""}"><span class="pawn" style="background:${teamColour(r.i)}"></span>${esc(r.name)} <b>${r.score}</b></span>`).join("")}</div>`;
 }
 /* opts: teamName, seconds, role (describer | guesser | watcher), boundary, describerName, menu (group), extraFoot */
-function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, menu, extraFoot = "" }) {
+function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, menu, extraFoot = "", sub = "", roundName = "", watchNote = "" }) {
   const cur = t.cards[t.cur];
   const left = t.phase === "run" ? Math.max(0, t.endsAt - Date.now()) : t.left;
   const secs = Math.ceil(left / 1000);
@@ -1015,7 +1087,8 @@ function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, men
       <span class="digits ${secs <= 5 ? "low" : ""}" id="digits">${secs}</span>
       ${role === "describer" ? `<button class="skipped-btn" data-act="t-skipped" ${skipped.length ? "" : "disabled"}>Skipped (${skipped.length})</button>` : `<span class="score-pill">${turnScore(t)} got</span>`}
     </div>
-    <div class="bar ${secs <= 5 ? "low" : ""}"><i id="bar" style="transform:scaleX(${Math.min(1, left / (seconds * 1000))})"></i></div>`;
+    <div class="bar ${secs <= 5 ? "low" : ""}"><i id="bar" style="transform:scaleX(${Math.min(1, left / (seconds * 1000))})"></i></div>
+    ${sub ? `<p class="label" style="margin:0">${esc(sub)}</p>` : ""}`;
 
   if (t.phase === "last") {
     return screen(head,
@@ -1041,12 +1114,12 @@ function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, men
   const card = `
     <div class="card3d ${flip ? "flip" : ""}" id="card" data-cat="${cur.cat}">
       <div class="inner">
-        <div class="face front catfill" data-cat="${cur.cat}"><span class="sm">It's a</span><span class="lg">${catName(cur.cat)}</span></div>
+        <div class="face front catfill" data-cat="${cur.cat}"><span class="sm">It's a</span><span class="lg">${catName(cur.cat)}</span>${roundName ? `<span class="sm" style="margin-top:14px;font-size:15px">${esc(roundName)}</span>` : ""}</div>
         <div class="face back">
           <div class="top"><span class="cat-chip">${catName(cur.cat)}</span>
             <button class="star" data-act="t-save" aria-pressed="${isSaved(cur.cat, cur.w)}">${isSaved(cur.cat, cur.w) ? "★ Saved" : "☆ Save"}</button></div>
           <div class="word">${esc(cur.w)}</div>
-          ${role === "watcher" ? `<p class="card-note">You're watching. Call it if they say the word or a rhyme.</p>` : ""}
+          ${role === "watcher" ? `<p class="card-note">You're watching. ${esc(watchNote || "Call it if they say the word or a rhyme.")}</p>` : ""}
         </div>
       </div>
     </div>`;
@@ -1059,12 +1132,12 @@ function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, men
     </div>
     <p class="card-note"><button class="link" data-act="t-pause">Pause</button></p>${extraFoot}`, true);
 }
-function turnSummaryHtml(t, teamName, canFix, board, nextLabel, extraFoot = "") {
+function turnSummaryHtml(t, teamName, canFix, board, nextLabel, extraFoot = "", note = "") {
   const got = turnScore(t);
   const tagFor = r => ({ got: ["got", "Got it"], skip: ["skip", "Skipped"], park: ["skip", "Skipped"], bin: ["bin", "Binned"], miss: ["miss", "Missed"] }[r] || ["miss", "Out of time"]);
   return screen(
     `<div class="big-num c-yellow"><b>${got}</b><span class="quip">${esc(turnQuip(got))}</span></div>
-     <p class="muted small">${esc(teamName)} get ${got} point${got === 1 ? "" : "s"}.${canFix ? " Tap a card to fix a mis-tap." : ""}</p>`,
+     <p class="muted small">${esc(teamName)} get ${got} point${got === 1 ? "" : "s"}.${note ? ` <b>${esc(note)}</b>` : ""}${canFix ? " Tap a card to fix a mis-tap." : ""}</p>`,
     `<ul class="list">${t.cards.map((c, i) => { const [cls, txt] = tagFor(c.res); return `
       <li><button data-cat="${c.cat}" ${canFix ? `data-act="t-toggle" data-i="${i}"` : "disabled"}><span class="w"><span class="dot"></span>${esc(c.w)}</span><span class="tag ${cls}">${txt}</span></button></li>`; }).join("")}</ul>`,
     `${board ? miniScores(board) : ""}${nextLabel ? `<button class="btn big orange" data-act="t-next">${esc(nextLabel)}</button>` : ""}${extraFoot}`,
@@ -1073,7 +1146,7 @@ function turnSummaryHtml(t, teamName, canFix, board, nextLabel, extraFoot = "") 
 function scoreboardHtml(rows) {
   const sorted = rows.slice().sort((a, b) => b.score - a.score);
   return `<div class="scoreboard">${sorted.map((r, pos) => `
-    <div class="rowx ${pos === 0 && r.score > 0 ? "c-plum" : "c-cream"}"><span class="pos">${pos + 1}</span><span class="pawn" style="background:${teamColour(r.i)}"></span><span class="nm">${esc(r.name)}</span><span class="n">${r.score}</span></div>`).join("")}</div>`;
+    <div class="rowx ${pos === 0 && r.score > 0 ? "c-plum" : "c-cream"}"><span class="pos">${pos + 1}</span><span class="pawn" style="background:${teamColour(r.i)}"></span><span class="nm">${esc(r.name)}${r.rounds ? `<br><small style="font-weight:600;opacity:.8">${r.rounds.map((n, i) => `R${i + 1} ${n}`).join(" · ")}</small>` : ""}</span><span class="n">${r.score}</span></div>`).join("")}</div>`;
 }
 function resultsHtml(rows, log, kind, nameOfTeam) {
   const sorted = rows.slice().sort((a, b) => b.score - a.score);
@@ -1121,7 +1194,7 @@ function renderSheet() {
   } else if (S.sheet === "menu") {
     const G = gstate(); if (!G) { S.sheet = null; root.innerHTML = ""; return; }
     const myIdx = myTeamIdx(G);
-    inner = `<div class="spread"><h3>Game ${esc(G.code)} · Round ${G.round} of ${G.rounds}</h3><button class="x" data-act="sheet-close" aria-label="Close">×</button></div>
+    inner = `<div class="spread"><h3>Game ${esc(G.code)} · Round ${G.round} of ${ROUNDS.length}</h3><button class="x" data-act="sheet-close" aria-label="Close">×</button></div>
       ${scoreboardHtml(groupScores(G))}
       ${myIdx < 0 ? `<div class="label">You're watching. Join a pair?</div><div class="chips">${G.teams.map((tm, i) => `<button class="chip" data-jointeam="${i}">${esc(teamName(tm))}</button>`).join("")}</div>` : ""}
       <div class="pair"><button class="btn ghost" data-act="leave">Leave</button>${G.host === CAP.pid ? `<button class="btn orange" data-act="g-end">End game</button>` : ""}</div>`;
@@ -1157,9 +1230,8 @@ function turnAct(act, arg) {
     render();
   } else if (S.view === "group") {
     const G = gstate(); if (!G?.turn) return;
-    const used = new Set(G.used || []);
-    const t = applyAct(G.turn, act, arg, () => groupDraw(G, used));
-    pushGame({ turn: t, used: [...used].slice(-900) });
+    const t = applyAct(G.turn, act, arg, turn => bucketDraw(G.deck || [], G.remaining || [], turn));
+    pushGame({ turn: t });
   }
 }
 function animatedAct(kind) {
@@ -1227,7 +1299,7 @@ async function hostGame() {
   try {
     await CAP.db.doc("games/" + code).set({
       code, host: CAP.pid, createdAt: Date.now(), status: "lobby",
-      seconds: st.seconds, rounds: st.rounds, boundary: st.boundary, setting: st.setting, ai: !!(st.ai && CAP.sample),
+      seconds: st.seconds, rounds: ROUNDS.length, bucket: st.bucket || 40, boundary: st.boundary, setting: st.setting, ai: !!(st.ai && CAP.sample),
       deck: [], teams: [], teamIdx: 0, round: 1, turn: null, used: [], log: [],
     });
   } catch (e) { toast(e?.code === "invalid_argument" ? "You need edit access to this page to host." : "Couldn't create the game. Try again."); return; }
@@ -1274,16 +1346,6 @@ function buildTeams() {
   if (rest.length && teams.length) teams[Math.floor(Math.random() * teams.length)].members.push(rest.pop());
   return teams;
 }
-function groupDraw(G, used) {
-  const deck = G.deck || [];
-  const avail = c => deck.some(([w, cat]) => cat === c && !used.has(key(cat, w)));
-  let cats = CAT_IDS.filter(avail);
-  if (!cats.length) { used.clear(); cats = CAT_IDS.filter(avail); if (!cats.length) return null; }
-  const cat = pick(cats);
-  const [w] = deck.find(([w2, c2]) => c2 === cat && !used.has(key(c2, w2)));
-  used.add(key(cat, w));
-  return { w, cat };
-}
 async function startGroupGame(G) {
   const teams = buildTeams();
   if (teams.length < 2) { toast("You need at least 2 pairs"); return; }
@@ -1295,9 +1357,9 @@ async function startGroupGame(G) {
     S.cooking = false;
   }
   const deck = buildDeck({ people, boundary: G.boundary, setting: G.setting, words: ON.players.map(p => p.words || {}), ai });
-  // Store as one ordered list, compact: [word, category]
-  const flat = CAT_IDS.flatMap(c => deck[c].slice(0, 220).map(x => [x.w, x.cat]));
-  pushGame({ status: "playing", teams, deck: flat, teamIdx: 0, round: 1, turn: null, used: [], log: [] });
+  // The bucket, compact: [word, category]
+  const bucket = makeBucket(deck, G.bucket || 40);
+  pushGame({ status: "playing", teams, deck: bucket, remaining: freshRound(bucket, []), binned: [], intro: true, teamIdx: 0, round: 1, turn: null, used: [], log: [] });
 }
 function oPauseIfDescribing() {
   const t = gstate()?.turn;
@@ -1308,7 +1370,12 @@ function suggestedDescriber(G, ti) {
   const turns = id => (G.log || []).filter(l => l.byId === id).length;
   return present.sort((a, b) => turns(a) - turns(b))[0] || null;
 }
-function groupScores(G) { return (G.teams || []).map((t, i) => ({ name: teamName(t), i, score: (G.log || []).filter(l => l.team === i).reduce((n, l) => n + l.got, 0) })); }
+function groupScores(G) {
+  return (G.teams || []).map((t, i) => {
+    const mine = (G.log || []).filter(l => l.team === i);
+    return { name: teamName(t), i, score: mine.reduce((n, l) => n + l.got, 0), rounds: ROUNDS.map((_, r) => mine.filter(l => l.round === r + 1).reduce((n, l) => n + l.got, 0)) };
+  });
+}
 
 function renderGroup() {
   if (ON.readonly) return screen(backBar("Home"), `<div class="panel"><h2>Ask for access</h2><p>You can open this page but can't save to it, so you can't join yet. Ask whoever shared it to give you edit access.</p></div>${filler()}`, "", true);
@@ -1358,8 +1425,10 @@ function renderGroupPlay(G) {
   const myIdx = myTeamIdx(G), onTeam = myIdx === ti;
   const teamEmpty = !(team.members || []).some(id => ON.players.some(p => p.id === id));
   const tName = teamName(team);
-  const top = `<div class="spread"><button class="back" data-act="g-menu">☰ Scores</button><span class="label">Round ${G.round} of ${G.rounds}</span></div>`;
+  const round = ROUNDS[G.round - 1] || ROUNDS[0];
+  const top = `<div class="spread"><button class="back" data-act="g-menu">☰ Scores</button><span class="label">Round ${G.round} of ${ROUNDS.length} · ${round.name}</span></div>`;
   const scores = miniScores(groupScores(G));
+  if (G.intro && !t) return roundIntroHtml(G.round, (G.deck || []).length, top, `${scores}<button class="btn big yellow" data-act="round-go">${G.round === 1 ? "Let's go" : `Start round ${G.round}`}</button>`);
   if (!t) {
     const sug = suggestedDescriber(G, ti);
     if (onTeam || teamEmpty) {
@@ -1379,23 +1448,31 @@ function renderGroupPlay(G) {
     return screen(top,
       `<div class="tile c-plum grow"><span class="sm">${describing ? "You're describing" : `${esc(dName)} is describing`}</span><span class="lg">${describing ? "Ready?" : role === "guesser" ? "Get ready" : "Watch them"}</span></div>
        ${filler()}
-       ${describing ? `<p class="muted center small">No saying the word, rhymes or "sounds like". ${MAX_SKIPS} skips. ${G.seconds} seconds.</p>` : ""}`,
+       <p class="muted center small"><b>${round.name}:</b> ${esc(round.rule)} ${(G.remaining || []).length} cards left in the bucket.${describing ? ` ${MAX_SKIPS} skips. ${G.seconds} seconds.` : ""}</p>`,
       describing ? `<button class="btn big yellow" data-act="t-start">Start the clock</button><button class="link" data-act="g-unclaim">Actually, not me</button>` : scores + takeOver, true);
   }
   if (t.phase === "done") {
-    const isLast = ti === G.teams.length - 1 && G.round >= G.rounds;
-    return turnSummaryHtml(t, tName, describing || onTeam || teamEmpty, groupScores(G).map(r => r.i === ti ? { ...r, score: r.score + turnScore(t) } : r), isLast ? "See who won" : `Next: ${teamName(G.teams[(ti + 1) % G.teams.length])}`);
+    const after = settleBucket(G.deck || [], G.remaining || [], G.binned || [], t).remaining.length;
+    return turnSummaryHtml(t, tName, describing || onTeam || teamEmpty, groupScores(G).map(r => r.i === ti ? { ...r, score: r.score + turnScore(t) } : r),
+      nextLabel(after, G.round, teamName(G.teams[(ti + 1) % G.teams.length])), "", bucketNote(after, G.round));
   }
-  return turnPlayHtml(t, { teamName: tName, seconds: G.seconds, role, boundary: G.boundary, describerName: dName, menu: true, extraFoot: takeOver });
+  return turnPlayHtml(t, { teamName: tName, seconds: G.seconds, role, boundary: G.boundary, describerName: dName, menu: true, extraFoot: takeOver,
+    sub: `${round.name} · ${leftInBucket(G.remaining || [], t)} left in the bucket`, roundName: round.name, watchNote: round.call });
 }
 function groupNext(G) {
   const t = G.turn, got = turnScore(t);
-  const entry = { team: t.team, got, byId: t.describer, by: nameOf(t.describer), skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w).slice(0, 5), binned: t.cards.filter(c => c.res === "bin").length };
-  const log = [...(G.log || []), entry].slice(-60);
-  let teamIdx = (t.team + 1) % G.teams.length, round = G.round;
-  if (teamIdx === 0) round++;
-  if (round > G.rounds) pushGame({ turn: null, log, status: "over" });
-  else pushGame({ turn: null, log, teamIdx, round });
+  const entry = { team: t.team, round: G.round, got, byId: t.describer, by: nameOf(t.describer), skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w).slice(0, 5), binned: t.cards.filter(c => c.res === "bin").length };
+  const log = [...(G.log || []), entry].slice(-150);
+  const teamIdx = (t.team + 1) % G.teams.length;
+  let { remaining, binned } = settleBucket(G.deck || [], G.remaining || [], G.binned || [], t);
+  let round = G.round, intro = false;
+  if (!remaining.length) {
+    round++;
+    remaining = round <= ROUNDS.length ? freshRound(G.deck || [], binned) : [];
+    intro = true;
+  }
+  if (!remaining.length) pushGame({ turn: null, log, remaining, binned, status: "over" });
+  else pushGame({ turn: null, log, teamIdx, round, remaining, binned, intro });
   window.scrollTo(0, 0);
 }
 
@@ -1413,7 +1490,7 @@ document.addEventListener("click", e => {
   if (b.dataset.pref) {
     const name = b.dataset.pref, raw = b.dataset.val;
     if (name.startsWith("s-")) {
-      const k = name.slice(2), num = ["boundary", "rounds", "seconds"].includes(k);
+      const k = name.slice(2), num = ["boundary", "bucket", "seconds"].includes(k);
       profile.setup[k] = num ? +raw : raw;
       if (k === "setting" && (raw === "family" || raw === "work") && profile.setup.boundary > 1) profile.setup.boundary = 1;
     } else if (b.dataset.multi === "1") {
@@ -1481,6 +1558,7 @@ document.addEventListener("click", e => {
     case "t-last-no": turnAct("last", false); return;
     case "t-toggle": turnAct("toggle", +b.dataset.i); return;
     case "t-next": if (S.view === "play") finishLocalTurn(); else groupNext(gstate()); return;
+    case "round-go": if (S.view === "play") { game.intro = false; render(); } else if (gstate()) pushGame({ intro: false }); return;
     // Group
     case "leave": leaveGame(); return;
     case "group-done": leaveGame(); return;
