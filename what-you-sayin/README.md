@@ -30,7 +30,7 @@ is for a different SDK, upgrade with `npm install expo@^<version>` and then
 
 ## How a full game works
 
-A game deals one **bucket** of cards (20, 40 or 60) and plays it three
+A game deals one **bucket** of cards, 4 per player, and plays it three
 times, each round harder than the last:
 
 1. **Describe it**: say anything except the word itself.
@@ -42,12 +42,18 @@ the bucket for that round; skipped ones go back in. When it's empty the
 round ends and every card goes back in for the next one. Points add up
 across all three rounds. Quick fire is a single 60-second round instead.
 
+Each card has a **Quality** ranking in `cards.xlsx` (1, 1.5 or 2; 1.5 is
+filler). Full games only use 1.5 and 2 and never deal more than two 1.5s in
+a row. Quick fire uses every ranking, never more than three 1s or two 1.5s
+in a row. Cards listed in each other's **Overlaps** column, or the same card
+in two categories, are never dealt in the same game.
+
 ## What works in the app
 
 - Quick fire, and new games where you pass one phone around
 - Preferences, saved and binned cards, and your own words. These stay on
   the phone between launches.
-- The card bank from `cards.xlsx` (3,561 cards), filtered by everyone's preferences
+- The card bank from `cards.xlsx` (3,039 cards), filtered by everyone's preferences
 
 Not in the app yet. These rely on the Claude-hosted version's shared
 storage and Claude access, so they need a backend first:

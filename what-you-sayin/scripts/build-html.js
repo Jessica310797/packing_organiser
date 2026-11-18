@@ -22,7 +22,7 @@ async function readCards(file) {
   const cards = [], problems = [], seen = new Set();
   ws.eachRow((row, n) => {
     if (n === 1) return;
-    const [word, cat, lvl, tags] = [1, 2, 3, 4].map(i => text(row.getCell(i).value));
+    const [word, cat, lvl, tags, quality, overlaps] = [1, 2, 3, 4, 5, 6].map(i => text(row.getCell(i).value));
     if (!word && !cat && !lvl) return;
     const c = ALIASES[cat.toLowerCase()] || cat.toLowerCase(), l = lvl.toLowerCase();
     if (!word) return problems.push(`row ${n}: no word`);
@@ -32,9 +32,34 @@ async function readCards(file) {
     const key = c + ":" + word.toLowerCase();
     if (seen.has(key)) return problems.push(`row ${n}: "${word}" is already in ${cat}`);
     seen.add(key);
-    cards.push({ word, cat: c, lvl: LEVELS[l], tags: tags.toLowerCase().split(/[\s,]+/).filter(Boolean).sort() });
+    const q = quality === "" ? 1 : Number(quality);
+    if (![1, 1.5, 2].includes(q)) return problems.push(`row ${n}: quality "${quality}" isn't 1, 1.5 or 2`);
+    cards.push({ word, cat: c, lvl: LEVELS[l], tags: tags.toLowerCase().split(/[\s,]+/).filter(Boolean).sort(), q, overlaps });
   });
   return { cards, problems };
+}
+
+// Cards that mustn't be dealt in the same game: ones listed in each other's Overlaps,
+// and the same card in two categories. Each group gets a number; 0 means no group.
+const looseKey = w => w.toLowerCase().replace(/[\u2018\u2019]/g, "'").normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z0-9' ]+/g, " ").replace(/\s+/g, " ").trim().replace(/^(a|an|the) /, "");
+function overlapGroups(cards) {
+  const parent = cards.map((_, i) => i);
+  const find = i => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const join = (a, b) => { parent[find(a)] = find(b); };
+  const byKey = new Map();
+  cards.forEach((c, i) => { const k = looseKey(c.word); if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(i); });
+  for (const list of byKey.values()) list.slice(1).forEach(i => join(i, list[0]));
+  cards.forEach((c, i) => c.overlaps.split(/[,/]/).map(x => looseKey(x)).filter(Boolean)
+    .forEach(k => (byKey.get(k) || []).forEach(j => join(i, j))));
+  const size = new Map(), ids = new Map();
+  cards.forEach((_, i) => size.set(find(i), (size.get(find(i)) || 0) + 1));
+  return cards.map((_, i) => {
+    const r = find(i);
+    if (size.get(r) < 2) return 0;
+    if (!ids.has(r)) ids.set(r, ids.size + 1);
+    return ids.get(r);
+  });
 }
 
 async function readTeamNames(file) {
@@ -65,11 +90,13 @@ async function main() {
     const { cards, problems } = await readCards(xlsx);
     problems.forEach(p => console.warn("Skipped " + p));
     if (!cards.length) throw new Error("cards.xlsx has no usable cards, so nothing was changed.");
-    const json = JSON.stringify(cards.map(c => [c.word, c.cat, c.lvl, c.tags])).replace(/<\//g, "<\\/");
+    const groups = overlapGroups(cards);
+    const json = JSON.stringify(cards.map((c, i) => [c.word, c.cat, c.lvl, c.tags, c.q, groups[i]])).replace(/<\//g, "<\\/");
     page = page.replace(/\/\* BANK_JSON:start \*\/[\s\S]*?\/\* BANK_JSON:end \*\//,
       () => `/* BANK_JSON:start */const BANK_JSON = ${json};/* BANK_JSON:end */`);
     fs.writeFileSync(pagePath, page);
     console.log(`Loaded ${cards.length} cards from cards.xlsx${problems.length ? ` (skipped ${problems.length} rows)` : ""}`);
+    console.log(`  ${cards.filter(c => c.q >= 1.5).length} are ranked 1.5 or 2 for full games; ${new Set(groups.filter(Boolean)).size} groups of overlapping cards`);
   }
 
   const teamXlsx = path.join(root, "team-names.xlsx");
