@@ -689,10 +689,14 @@ function personTags(p) {
 /* minQ: the lowest quality ranking to include (full games use 1.5). Players' own words go in first and count as 3; AI cards count as 2. */
 /* Cards this phone has already dealt, so new games use fresh ones until the bank runs out */
 const RECENT_MAX = 1500;
+/* No card comes back until this many games have gone by (unless the bank runs out) */
+const BLOCK_GAMES = 3;
+const blockedKeys = () => new Set((profile.lastGames || []).flat());
 function recentAges() { const m = new Map(); (profile.recent || []).forEach((k, i) => m.set(k, i)); return m; }
 function rememberDealt(cards) {
   const ks = cards.map(c => Array.isArray(c) ? key(c[1], c[0]) : key(c.cat, c.w)), drop = new Set(ks);
   profile.recent = [...(profile.recent || []).filter(k => !drop.has(k)), ...ks].slice(-RECENT_MAX);
+  profile.lastGames = [...(profile.lastGames || []), ks].slice(-BLOCK_GAMES);
   saveProfile(true);
 }
 function buildDeck({ people, boundary, setting, words = [], ai = [], minQ = 0 }) {
@@ -719,13 +723,16 @@ function buildDeck({ people, boundary, setting, words = [], ai = [], minQ = 0 })
     add(tagged || spicy ? personal : general, c.cat, c.w, c.q || 1, c.ov || 0);
   }
   // Interleave: personal cards come up about two times in three
-  const deck = {}, age = recentAges();
+  const deck = {}, age = recentAges(), blocked = blockedKeys();
   for (const c of CAT_IDS) {
     const p = shuffle(personal[c]), g = shuffle(general[c]), out = [];
     while (p.length || g.length) out.push((p.length && (Math.random() < 0.66 || !g.length)) ? p.shift() : g.shift());
     // Cards this phone hasn't dealt yet come first; ones it has go to the back, longest ago first
+    // and cards from the last 3 games are marked so they only come back if nothing else is left
     const fresh = out.filter(x => !age.has(key(x.cat, x.w))), old = out.filter(x => age.has(key(x.cat, x.w)));
-    deck[c] = [...shuffle(own[c]), ...fresh, ...old.sort((a, b) => age.get(key(a.cat, a.w)) - age.get(key(b.cat, b.w)))];
+    const all = [...shuffle(own[c]), ...fresh, ...old.sort((a, b) => age.get(key(a.cat, a.w)) - age.get(key(b.cat, b.w)))];
+    all.forEach(x => { x.blk = blocked.has(key(x.cat, x.w)); });
+    deck[c] = [...all.filter(x => !x.blk), ...all.filter(x => x.blk)];
   }
   return deck;
 }
@@ -810,12 +817,13 @@ function makeBucket(deck, n) {
   deck = clone(deck);
   const out = [], usedOv = new Set(), maxFill = Math.ceil(n * 0.6);
   let fill = 0;
-  let order = shuffle(CAT_IDS.filter(c => deck[c]?.length));
+  for (const allowBlocked of [false, true]) {
+  let order = shuffle(CAT_IDS.filter(c => deck[c]?.some(x => allowBlocked || !x.blk)));
   while (out.length < n && order.length) {
     for (const cat of order) {
       if (out.length >= n) break;
       let card = null;
-      while (deck[cat].length && !card) {
+      while (deck[cat].length && !card && (allowBlocked || !deck[cat][0].blk)) {
         const c = deck[cat].shift();
         if (c.ov && usedOv.has(c.ov)) continue;
         if (c.q === 1.5 && fill >= maxFill) continue;
@@ -826,7 +834,8 @@ function makeBucket(deck, n) {
       if (card.q === 1.5) fill++;
       out.push([card.w, card.cat, card.q || 1]);
     }
-    order = shuffle(order.filter(c => deck[c].length));
+    order = shuffle(order.filter(c => deck[c].length && (allowBlocked || !deck[c][0].blk)));
+  }
   }
   return out;
 }
@@ -1223,11 +1232,11 @@ function localDraw(turn) {
   // Quick fire: a mix of rankings and categories, never an overlapping card twice
   if (!CAT_IDS.some(c => game.deck[c]?.length)) { game.deck = buildDeck(game.deckOpts); game.usedOv = []; toast("Deck reshuffled"); }
   const blocked = blockedQuality(qualitySeq(turn), RUN_LIMITS.quick), prev = lastCat(turn);
-  const usable = (c, strict) => !(c.ov && game.usedOv.includes(c.ov)) && !(strict && blocked && (c.q || 1) === blocked);
-  // strictest first: a new category and an allowed ranking; then relax the ranking; then the category
-  for (const [strict, newCat] of [[true, true], [false, true], [false, false]]) {
+  const usable = (c, strict, notRecent) => !(c.ov && game.usedOv.includes(c.ov)) && !(strict && blocked && (c.q || 1) === blocked) && !(notRecent && c.blk);
+  // strictest first: not from the last 3 games, a new category and an allowed ranking; then relax the ranking, the category, and last the 3-game rule
+  for (const [strict, newCat, notRecent] of [[true, true, true], [false, true, true], [false, false, true], [false, true, false], [false, false, false]]) {
     for (const cat of shuffle(CAT_IDS.filter(c => game.deck[c]?.length && !(newCat && c === prev)))) {
-      const list = game.deck[cat], i = list.slice(0, 40).findIndex(c => usable(c, strict));
+      const list = game.deck[cat], i = list.slice(0, 40).findIndex(c => usable(c, strict, notRecent));
       if (i < 0) continue;
       const [card] = list.splice(i, 1);
       if (card.ov) game.usedOv.push(card.ov);
