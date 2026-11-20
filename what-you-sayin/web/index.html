@@ -302,6 +302,10 @@ select.input { appearance: auto; }
   background: var(--deep); border: 0; padding: 10px 12px; color: var(--cream);
 }
 .list .w { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: normal; word-break: normal; hyphens: manual; }
+.add-word { display: flex; gap: 8px; }
+.add-word .input { flex: 1; min-width: 0; }
+.add-word .btn { flex: none; width: auto; padding-left: 20px; padding-right: 20px; }
+.scroll-y { overflow-y: auto; min-height: 0; }
 .list .dot { width: 8px; height: 8px; background: var(--yellow); flex: none; }
 .tag { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 3px 7px; white-space: nowrap; }
 .tag.got { background: var(--mint); color: var(--deep); }
@@ -1086,15 +1090,30 @@ function renderSaved() {
     body, "", false);
 }
 
+const ownCount = () => CAT_IDS.reduce((n, c) => n + parseList(profile.words[c]).length, 0);
+function addOwnWord() {
+  const el = $("#word-new"), w = (el?.value || "").replace(/,/g, " ").trim(), c = S.sub.wcat;
+  if (!w) { el?.focus(); return; }
+  const list = parseList(profile.words[c]);
+  if (list.some(x => x.toLowerCase() === w.toLowerCase())) S.wordNote = `"${w}" is already in there.`;
+  else { profile.words[c] = [...list, w].join("\n"); saveProfile(true); S.wordNote = `Added "${w}". It'll be in your next game.`; }
+  render(); setTimeout(() => $("#word-new")?.focus(), 0);
+}
 function renderDeckTab() {
   const total = (useBuiltIn ? BUILT_IN.length : 0) + IMPORTED.length;
   let body;
   if (S.sub.deck === "words") {
-    const c = S.sub.wcat;
+    const c = S.sub.wcat, mine = parseList(profile.words[c]);
     body = `
       <p class="muted small">In-jokes, your local, your mate's ex. These always go in your games, and come with you when you join someone else's.</p>
       <div class="chips">${CATS.map(x => { const n = parseList(profile.words[x.id]).length; return `<button class="chip" data-sub="wcat" data-val="${x.id}" aria-pressed="${c === x.id}">${x.name}${n ? ` <small>${n}</small>` : ""}</button>`; }).join("")}</div>
-      <textarea class="input grow" data-words="${c}" maxlength="4000" placeholder="Your own ${catName(c).toLowerCase()} cards. One per line, or comma separated." aria-label="Your own ${catName(c)} cards">${esc(profile.words[c] || "")}</textarea>`;
+      <div class="add-word">
+        <input class="input" id="word-new" maxlength="60" placeholder="Add ${/^[aeiou]/i.test(catName(c)) ? "an" : "a"} ${catName(c).toLowerCase()} card" aria-label="New ${catName(c)} card" enterkeyhint="done" autocomplete="off">
+        <button class="btn yellow" data-act="word-add">Add</button>
+      </div>
+      <p class="hint" id="word-note">${S.wordNote ? esc(S.wordNote) : `You have ${ownCount()} of your own words. They go in first in your next game.`}</p>
+      <div class="grow scroll-y">${mine.length ? `<ul class="list">${mine.map((w, i) => `<li><div data-cat="${c}"><span class="w"><span class="dot"></span>${esc(w)}</span><button class="chip" data-act="word-rm" data-i="${i}" aria-label="Remove ${esc(w)}">Remove</button></div></li>`).join("")}</ul>`
+        : `<div class="wait">No ${catName(c).toLowerCase()} cards yet. In-jokes, your local, your mate's ex.</div>`}</div>`;
   } else {
     body = `
       <p class="muted small">${BUILT_IN.length} built-in cards${useBuiltIn ? "" : " (switched off)"} and ${IMPORTED.length} from your spreadsheet. Everyone only gets the ones that fit them: city, culture, age, interests, setting and boundary.</p>
@@ -1734,7 +1753,7 @@ document.addEventListener("click", e => {
 
   if (b.dataset.tab) { go("tabs", b.dataset.tab); return; }
   if (b.dataset.tabGo) { go("tabs", b.dataset.tabGo); return; }
-  if (b.dataset.sub) { S.sub[b.dataset.sub] = b.dataset.val; render(); return; }
+  if (b.dataset.sub) { S.sub[b.dataset.sub] = b.dataset.val; S.wordNote = ""; render(); return; }
 
   // Preference chips (Me tab and game setup)
   if (b.dataset.pref) {
@@ -1825,6 +1844,8 @@ document.addEventListener("click", e => {
   }
 
   if (b.dataset.unsave != null) { profile.saved.splice(+b.dataset.unsave, 1); saveProfile(true); render(); return; }
+  if (act === "word-add") { addOwnWord(); return; }
+  if (act === "word-rm") { const c = S.sub.wcat, list = parseList(profile.words[c]); const [w] = list.splice(+b.dataset.i, 1); profile.words[c] = list.join("\n"); saveProfile(true); S.wordNote = `Removed "${w}".`; render(); return; }
   if (b.dataset.unbin != null) { profile.rejected.splice(+b.dataset.unbin, 1); saveProfile(true); render(); return; }
   if (b.dataset.rmPlayer != null) {
     const team = profile.setup.teams[+b.dataset.rmPlayer], list = parseList(team.players);
@@ -1893,6 +1914,7 @@ document.addEventListener("change", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id === "join-code") joinGame(e.target.value);
+  if (e.key === "Enter" && e.target.id === "word-new") { e.preventDefault(); addOwnWord(); }
   if (e.key === "Enter" && e.target.dataset?.addPlayer != null) e.target.blur();
 });
 document.addEventListener("visibilitychange", () => {
