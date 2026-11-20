@@ -850,6 +850,10 @@ function nextLabel(remainingAfter, round, nextTeamName) {
   if (remainingAfter > 0) return "Next Team";
   return round >= ROUNDS.length ? "See who won" : `Round ${round + 1}: ${ROUNDS[round].name}`;
 }
+/* A team that empties the bucket with time on the clock starts the next round with what's left */
+const MIN_CARRY = 3000;
+const carryOver = (t, remainingAfter, round) => remainingAfter === 0 && round < ROUNDS.length && (t.spare || 0) >= MIN_CARRY ? t.spare : 0;
+const carryNote = (ms, round) => ms ? ` You had ${Math.ceil(ms / 1000)} seconds left, so you start round ${round + 1} with them.` : "";
 function bucketNote(remainingAfter, round) {
   if (remainingAfter > 0) return `${remainingAfter} card${remainingAfter === 1 ? "" : "s"} left in the bucket.`;
   return round >= ROUNDS.length ? "The bucket's empty. That's the game." : `The bucket's empty. Round ${round} done!`;
@@ -872,7 +876,7 @@ const skippedCards = t => t.cards.map((c, i) => ({ ...c, i })).filter(c => (c.re
 function applyAct(t, act, arg, draw) {
   t = clone(t);
   const cur = t.cards[t.cur];
-  const next = () => { const c = draw(t); if (!c) { t.phase = "done"; return; } t.cards.push({ w: c.w, cat: c.cat, q: c.q || 1, res: null }); t.cur = t.cards.length - 1; };
+  const next = () => { const c = draw(t); if (!c) { t.spare = t.phase === "run" ? Math.max(0, t.endsAt - Date.now()) : 0; t.phase = "done"; return; } t.cards.push({ w: c.w, cat: c.cat, q: c.q || 1, res: null }); t.cur = t.cards.length - 1; };
   switch (act) {
     case "start": if (t.cur < 0) next(); t.phase = t.phase === "done" ? "done" : "run"; t.endsAt = Date.now() + t.left; break;
     case "pause": t.left = Math.max(0, t.endsAt - Date.now()); t.phase = "paused"; break;
@@ -1179,7 +1183,7 @@ function startLocal(kind) {
 function newLocalTurn() {
   const t = game.teams[game.teamIdx];
   const r = game.rot[game.teamIdx] || 0;
-  return blankTurn({ team: game.teamIdx, left: game.seconds * 1000, prevQ: game.prevQ || [], prevCat: game.prevCat || null, describer: t.players.length ? t.players[r % t.players.length] : "" });
+  return blankTurn({ team: game.teamIdx, left: game.bonus || game.seconds * 1000, bonus: !!game.bonus, prevQ: game.prevQ || [], prevCat: game.prevCat || null, describer: t.players.length ? t.players[r % t.players.length] : "" });
 }
 function localDraw(turn) {
   if (game.kind !== "quick") return bucketDraw(game.bucket, game.remaining, turn);
@@ -1216,15 +1220,15 @@ function renderLocalPlay() {
        <div class="grow"></div>
        <p class="rule-cap r${rn}">${RULE_CAPS[rn - 1]}</p>
        <p class="center small">${t.describer && !quick ? `${esc(team.name)} are guessing. ` : ""}${quick ? `Describe as many as you can. No saying the word, a rhyme or "sounds like".` : esc(round.rule)}</p>
-       <p class="center small muted">${quick ? "" : `${g.remaining.length} cards left in the bucket · `}${MAX_SKIPS} skips · ${g.seconds} seconds</p>`,
+       <p class="center small muted">${quick ? "" : `${g.remaining.length} cards left in the bucket · `}${MAX_SKIPS} skips · ${t.bonus ? `${Math.ceil(t.left / 1000)} seconds left over from last round` : `${g.seconds} seconds`}</p>`,
       `${scores}<button class="btn big" data-act="t-start">I'm ready</button>`, true);
   }
   if (t.phase === "done") {
-    const nextTeam = g.teams[(g.teamIdx + 1) % g.teams.length].name;
     if (quick) return turnSummaryHtml(t, team.name, true, null, "See your score", "", "", {});
-    const after = settleBucket(g.bucket, g.remaining, g.binned, t).remaining.length;
-    return turnSummaryHtml(t, team.name, true, null, nextLabel(after, g.round, nextTeam), "", bucketNote(after, g.round),
-      { roundOver: after === 0, gameOver: after === 0 && g.round >= ROUNDS.length, nextTeam: g.teams.length > 1 ? nextTeam : "" });
+    const after = settleBucket(g.bucket, g.remaining, g.binned, t).remaining.length, carry = carryOver(t, after, g.round);
+    const nextTeam = carry ? team.name : g.teams[(g.teamIdx + 1) % g.teams.length].name;
+    return turnSummaryHtml(t, team.name, true, null, nextLabel(after, g.round, nextTeam), "", bucketNote(after, g.round) + carryNote(carry, g.round),
+      { roundOver: after === 0, gameOver: after === 0 && g.round >= ROUNDS.length, nextTeam: g.teams.length > 1 || carry ? nextTeam : "", keep: !!carry });
   }
   const top = g.teams.map((x, i) => ({ name: x.name, score: x.score + (i === t.team ? turnScore(t) : 0), i }));
   return turnPlayHtml(t, { teamName: team.name, seconds: g.seconds, role: "describer", boundary: g.boundary, round: rn, quick, top });
@@ -1234,12 +1238,13 @@ function finishLocalTurn() {
   g.teams[t.team].score += got;
   g.teams[t.team].rounds[g.round - 1] += got;
   g.log.push({ team: t.team, round: g.round, got, by: t.describer, skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w), binned: t.cards.filter(c => c.res === "bin").length });
-  g.rot[t.team] = (g.rot[t.team] || 0) + 1;
   g.prevQ = qualitySeq(t).slice(-3);
   g.prevCat = lastCat(t);
-  g.teamIdx = (g.teamIdx + 1) % g.teams.length;
   if (g.kind === "quick") { endLocalGame(); return; }
   Object.assign(g, settleBucket(g.bucket, g.remaining, g.binned, t));
+  // Spare time: the same team and describer go first next round with it
+  g.bonus = carryOver(t, g.remaining.length, g.round);
+  if (!g.bonus) { g.rot[t.team] = (g.rot[t.team] || 0) + 1; g.teamIdx = (g.teamIdx + 1) % g.teams.length; }
   if (!g.remaining.length) {
     g.round++;
     g.remaining = g.round <= ROUNDS.length ? freshRound(g.bucket, g.binned) : [];
@@ -1337,7 +1342,7 @@ function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, men
        <button data-act="t-pause">Pause</button>
      </div>${extraFoot}`, true);
 }
-/* opts: roundOver, gameOver, nextTeam */
+/* opts: roundOver, gameOver, nextTeam, keep (same describer goes again) */
 function turnSummaryHtml(t, teamName, canFix, board, nextLabelText, extraFoot = "", note = "", opts = {}) {
   const got = turnScore(t);
   const why = r => ({ skip: "skipped", park: "skipped", bin: "binned", miss: "missed" }[r] || "out of time");
@@ -1352,7 +1357,7 @@ function turnSummaryHtml(t, teamName, canFix, board, nextLabelText, extraFoot = 
      <p class="quip">${esc(turnQuip(got))}</p>`,
     `<ul class="ticks">${rows || `<li><button disabled><span class="mk">–</span><span class="w">No cards this turn</span></button></li>`}</ul>
      <p class="hint center">${canFix ? "Tap a word to fix a mis-tap. " : ""}${esc(note)}</p>`,
-    `${opts.nextTeam && !opts.gameOver ? `<p class="next-up"><b>Next up: ${esc(opts.nextTeam)}</b><br>Hand over the phone</p>` : (board ? miniScores(board) : "")}
+    `${opts.nextTeam && !opts.gameOver ? `<p class="next-up"><b>Next up: ${esc(opts.nextTeam)}</b><br>${opts.keep ? "Same describer, keep the phone" : "Hand over the phone"}</p>` : (board ? miniScores(board) : "")}
      ${nextLabelText ? `<button class="btn big" data-act="t-next">${esc(nextLabelText)}</button>` : ""}${extraFoot}`,
     false);
 }
@@ -1591,6 +1596,7 @@ function oPauseIfDescribing() {
   if (t && t.phase === "run" && t.describer === CAP.pid) { turnAct("pause"); holdScreen(false); }
 }
 function suggestedDescriber(G, ti) {
+  if (G.bonus && G.bonusBy && ON.players.some(p => p.id === G.bonusBy)) return G.bonusBy;
   const present = (G.teams[ti]?.members || []).filter(id => ON.players.some(p => p.id === id));
   const turns = id => (G.log || []).filter(l => l.byId === id).length;
   return present.sort((a, b) => turns(a) - turns(b))[0] || null;
@@ -1676,14 +1682,15 @@ function renderGroupPlay(G) {
     return screen(top,
       `<div class="tile c-plum grow"><span class="sm">${describing ? "You're describing" : `${esc(dName)} is describing`}</span><span class="lg">${describing ? "Ready?" : role === "guesser" ? "Get ready" : "Watch them"}</span></div>
        ${filler()}
-       <p class="muted center small"><b>${round.name}:</b> ${esc(round.rule)} ${(G.remaining || []).length} cards left in the bucket.${describing ? ` ${MAX_SKIPS} skips. ${G.seconds} seconds.` : ""}</p>`,
+       <p class="muted center small"><b>${round.name}:</b> ${esc(round.rule)} ${(G.remaining || []).length} cards left in the bucket.${describing ? ` ${MAX_SKIPS} skips. ${t.bonus ? `${Math.ceil(t.left / 1000)} seconds left over from last round.` : `${G.seconds} seconds.`}` : ""}</p>`,
       describing ? `<button class="btn big yellow" data-act="t-start">Start the clock</button><button class="link" data-act="g-unclaim">Actually, not me</button>` : scores + takeOver, true);
   }
   if (t.phase === "done") {
-    const after = settleBucket(G.deck || [], G.remaining || [], G.binned || [], t).remaining.length;
+    const after = settleBucket(G.deck || [], G.remaining || [], G.binned || [], t).remaining.length, carry = carryOver(t, after, G.round);
+    const nextName = carry ? tName : teamName(G.teams[(ti + 1) % G.teams.length]);
     return turnSummaryHtml(t, tName, describing || onTeam || teamEmpty, null,
-      nextLabel(after, G.round, teamName(G.teams[(ti + 1) % G.teams.length])), "", bucketNote(after, G.round),
-      { roundOver: after === 0, gameOver: after === 0 && G.round >= ROUNDS.length, nextTeam: teamName(G.teams[(ti + 1) % G.teams.length]) });
+      nextLabel(after, G.round, nextName), "", bucketNote(after, G.round) + carryNote(carry, G.round),
+      { roundOver: after === 0, gameOver: after === 0 && G.round >= ROUNDS.length, nextTeam: nextName, keep: !!carry });
   }
   const strip = groupScores(G).map(r => r.i === ti ? { ...r, score: r.score + turnScore(t) } : r);
   return turnPlayHtml(t, { teamName: tName, seconds: G.seconds, role, boundary: G.boundary, describerName: dName, menu: true, extraFoot: takeOver,
@@ -1693,8 +1700,8 @@ function groupNext(G) {
   const t = G.turn, got = turnScore(t);
   const entry = { team: t.team, round: G.round, got, byId: t.describer, by: nameOf(t.describer), skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w).slice(0, 5), binned: t.cards.filter(c => c.res === "bin").length };
   const log = [...(G.log || []), entry].slice(-150);
-  const teamIdx = (t.team + 1) % G.teams.length;
   let { remaining, binned } = settleBucket(G.deck || [], G.remaining || [], G.binned || [], t);
+  const bonus = carryOver(t, remaining.length, G.round), teamIdx = bonus ? t.team : (t.team + 1) % G.teams.length;
   let round = G.round, intro = false;
   if (!remaining.length) {
     round++;
@@ -1702,7 +1709,7 @@ function groupNext(G) {
     intro = true;
   }
   if (!remaining.length) pushGame({ turn: null, log, remaining, binned, status: "over" });
-  else pushGame({ turn: null, log, teamIdx, round, remaining, binned, intro, prevQ: qualitySeq(t).slice(-3), prevCat: lastCat(t) });
+  else pushGame({ turn: null, log, teamIdx, round, remaining, binned, intro, bonus, bonusBy: bonus ? t.describer : null, prevQ: qualitySeq(t).slice(-3), prevCat: lastCat(t) });
   window.scrollTo(0, 0);
 }
 
@@ -1843,7 +1850,7 @@ document.addEventListener("click", e => {
     case "pair-rest": if (isHost) { const rest = shuffle(lobbyPairs().single.map(p => p.id)); while (rest.length >= 2) pairUp(rest.pop(), rest.pop()); if (rest.length) toast(`${nameOf(rest[0])} is spare and will join a pair as a three`); } return;
     case "g-start": if (isHost) startGroupGame(G); return;
     case "g-end": if (isHost) { if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Tap again to end it"; return; } pushGame({ status: "over", turn: null }); } return;
-    case "g-describe": pushGame({ turn: blankTurn({ team: G.teamIdx, describer: CAP.pid, left: G.seconds * 1000, prevQ: G.prevQ || [], prevCat: G.prevCat || null }) }); return;
+    case "g-describe": pushGame({ turn: blankTurn({ team: G.teamIdx, describer: CAP.pid, left: G.bonus || G.seconds * 1000, bonus: !!G.bonus, prevQ: G.prevQ || [], prevCat: G.prevCat || null }) }); return;
     case "g-unclaim": pushGame({ turn: null }); return;
     case "g-takeover": pushGame({ turn: { ...G.turn, describer: CAP.pid } }); return;
   }

@@ -39,7 +39,9 @@ times, each round harder than the last:
 
 Teams take timed turns pulling cards from the bucket. Guessed cards leave
 the bucket for that round; skipped ones go back in. When it's empty the
-round ends and every card goes back in for the next one. Points add up
+round ends and every card goes back in for the next one. If a team empties the bucket
+with time still on the clock, the same describer starts the next round with
+that time (3 seconds or more). Points add up
 across all three rounds. Quick fire is a single 60-second round instead.
 
 Each card has a **Quality** ranking in `cards.xlsx` (1, 1.5, 2 or 3). Right
