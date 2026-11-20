@@ -682,6 +682,14 @@ function personTags(p) {
 }
 /* people: prefs of everyone playing; words: their own word lists; ai: AI-made cards */
 /* minQ: the lowest quality ranking to include (full games use 1.5). Players' own words and AI cards count as 2. */
+/* Cards this phone has already dealt, so new games use fresh ones until the bank runs out */
+const RECENT_MAX = 1500;
+function recentAges() { const m = new Map(); (profile.recent || []).forEach((k, i) => m.set(k, i)); return m; }
+function rememberDealt(cards) {
+  const ks = cards.map(c => Array.isArray(c) ? key(c[1], c[0]) : key(c.cat, c.w)), drop = new Set(ks);
+  profile.recent = [...(profile.recent || []).filter(k => !drop.has(k)), ...ks].slice(-RECENT_MAX);
+  saveProfile(true);
+}
 function buildDeck({ people, boundary, setting, words = [], ai = [], minQ = 0 }) {
   if (people.some(p => p?.age === "Under 18")) boundary = 0;
   const active = new Set([setting]);
@@ -705,11 +713,13 @@ function buildDeck({ people, boundary, setting, words = [], ai = [], minQ = 0 })
     add(tagged || spicy ? personal : general, c.cat, c.w, c.q || 1, c.ov || 0);
   }
   // Interleave: personal cards come up about two times in three
-  const deck = {};
+  const deck = {}, age = recentAges();
   for (const c of CAT_IDS) {
     const p = shuffle(personal[c]), g = shuffle(general[c]), out = [];
     while (p.length || g.length) out.push((p.length && (Math.random() < 0.66 || !g.length)) ? p.shift() : g.shift());
-    deck[c] = out;
+    // Cards this phone hasn't dealt yet come first; ones it has go to the back, longest ago first
+    const fresh = out.filter(x => !age.has(key(x.cat, x.w))), old = out.filter(x => age.has(key(x.cat, x.w)));
+    deck[c] = [...fresh, ...old.sort((a, b) => age.get(key(a.cat, a.w)) - age.get(key(b.cat, b.w)))];
   }
   return deck;
 }
@@ -1175,6 +1185,7 @@ function startLocal(kind) {
       kind, ...opts, deckOpts, deck, bucket, remaining: freshRound(bucket, []), binned: [], intro: !quick, prevQ: [], usedOv: [],
       teams: teams.map(t => ({ ...t, score: 0, rounds: [0, 0, 0] })), round: 1, teamIdx: 0, rot: {}, log: [], over: false,
     };
+    if (!quick) rememberDealt(bucket);
     game.turn = newLocalTurn();
     go("play");
   };
@@ -1240,7 +1251,7 @@ function finishLocalTurn() {
   g.log.push({ team: t.team, round: g.round, got, by: t.describer, skipped: t.cards.filter(c => c.res === "skip" || c.res === "park").map(c => c.w), binned: t.cards.filter(c => c.res === "bin").length });
   g.prevQ = qualitySeq(t).slice(-3);
   g.prevCat = lastCat(t);
-  if (g.kind === "quick") { endLocalGame(); return; }
+  if (g.kind === "quick") { rememberDealt(t.cards); endLocalGame(); return; }
   Object.assign(g, settleBucket(g.bucket, g.remaining, g.binned, t));
   // Spare time: the same team and describer go first next round with it
   g.bonus = carryOver(t, g.remaining.length, g.round);
@@ -1589,6 +1600,7 @@ async function startGroupGame(G) {
   const deck = buildDeck({ people, boundary: G.boundary, setting: G.setting, words: ON.players.map(p => p.words || {}), ai, minQ: MIN_QUALITY });
   // The bucket, compact: [word, category]
   const bucket = makeBucket(deck, ON.players.length * CARDS_PER_PLAYER);
+  rememberDealt(bucket);
   pushGame({ status: "playing", teams, deck: bucket, remaining: freshRound(bucket, []), binned: [], intro: true, teamIdx: 0, round: 1, turn: null, used: [], log: [] });
 }
 function oPauseIfDescribing() {

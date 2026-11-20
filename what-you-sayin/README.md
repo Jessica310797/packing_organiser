@@ -50,7 +50,9 @@ rest stay in the spreadsheet: to bring them back, set `MIN_QUALITY` near the
 top of the script in `web/index.html` to `1.5` and run `npm run build-html`.
 
 Buckets take an equal share from each category, and two cards from the same
-category are never dealt in a row. Cards listed in each other's **Overlaps**
+category are never dealt in a row. Each phone remembers the cards it has dealt, so new games use cards it
+hasn't dealt yet, then the ones dealt longest ago once those run out.
+Cards listed in each other's **Overlaps**
 column, or the same card in two categories, are never dealt in the same game.
 
 ## What works in the app
