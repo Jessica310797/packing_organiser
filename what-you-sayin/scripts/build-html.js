@@ -33,7 +33,7 @@ async function readCards(file) {
     if (seen.has(key)) return problems.push(`row ${n}: "${word}" is already in ${cat}`);
     seen.add(key);
     const q = quality === "" ? 1 : Number(quality);
-    if (![1, 1.5, 2].includes(q)) return problems.push(`row ${n}: quality "${quality}" isn't 1, 1.5 or 2`);
+    if (![1, 1.5, 2, 3].includes(q)) return problems.push(`row ${n}: quality "${quality}" isn't 1, 1.5, 2 or 3`);
     cards.push({ word, cat: c, lvl: LEVELS[l], tags: tags.toLowerCase().split(/[\s,]+/).filter(Boolean).sort(), q, overlaps });
   });
   return { cards, problems };
@@ -96,7 +96,7 @@ async function main() {
       () => `/* BANK_JSON:start */const BANK_JSON = ${json};/* BANK_JSON:end */`);
     fs.writeFileSync(pagePath, page);
     console.log(`Loaded ${cards.length} cards from cards.xlsx${problems.length ? ` (skipped ${problems.length} rows)` : ""}`);
-    console.log(`  ${cards.filter(c => c.q >= 1.5).length} are ranked 1.5 or 2 for full games; ${new Set(groups.filter(Boolean)).size} groups of overlapping cards`);
+    console.log(`  ${cards.filter(c => c.q === 3).length} are ranked 3; ${cards.filter(c => c.q >= 1.5).length} are ranked 1.5 or higher; ${new Set(groups.filter(Boolean)).size} groups of overlapping cards`);
   }
 
   const teamXlsx = path.join(root, "team-names.xlsx");
