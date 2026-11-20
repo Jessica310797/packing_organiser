@@ -681,7 +681,7 @@ function personTags(p) {
   return t;
 }
 /* people: prefs of everyone playing; words: their own word lists; ai: AI-made cards */
-/* minQ: the lowest quality ranking to include (full games use 1.5). Players' own words and AI cards count as 2. */
+/* minQ: the lowest quality ranking to include (full games use 1.5). Players' own words go in first and count as 3; AI cards count as 2. */
 /* Cards this phone has already dealt, so new games use fresh ones until the bank runs out */
 const RECENT_MAX = 1500;
 function recentAges() { const m = new Map(); (profile.recent || []).forEach((k, i) => m.set(k, i)); return m; }
@@ -695,14 +695,15 @@ function buildDeck({ people, boundary, setting, words = [], ai = [], minQ = 0 })
   const active = new Set([setting]);
   people.forEach(p => personTags(p).forEach(t => active.add(t)));
   const rejected = new Set(profile.rejected);
-  const seen = new Set(), personal = {}, general = {};
-  CAT_IDS.forEach(c => { personal[c] = []; general[c] = []; });
+  const seen = new Set(), own = {}, personal = {}, general = {};
+  CAT_IDS.forEach(c => { own[c] = []; personal[c] = []; general[c] = []; });
   const add = (bucket, cat, w, q = 2, ov = 0) => {
     const k = key(cat, w);
     if (!CAT_IDS.includes(cat) || seen.has(k) || rejected.has(k)) return;
     seen.add(k); bucket[cat].push({ w, cat, q, ov });
   };
-  words.forEach(ws => CAT_IDS.forEach(c => parseList(ws?.[c]).forEach(w => add(personal, c, w))));
+  // Players' own words always go in first
+  words.forEach(ws => CAT_IDS.forEach(c => parseList(ws?.[c]).forEach(w => add(own, c, w, 3))));
   ai.forEach(c => add(personal, c.cat, c.w));
   const bank = [...(useBuiltIn ? BUILT_IN : []), ...IMPORTED];
   for (const c of shuffle(bank)) {
@@ -719,7 +720,7 @@ function buildDeck({ people, boundary, setting, words = [], ai = [], minQ = 0 })
     while (p.length || g.length) out.push((p.length && (Math.random() < 0.66 || !g.length)) ? p.shift() : g.shift());
     // Cards this phone hasn't dealt yet come first; ones it has go to the back, longest ago first
     const fresh = out.filter(x => !age.has(key(x.cat, x.w))), old = out.filter(x => age.has(key(x.cat, x.w)));
-    deck[c] = [...fresh, ...old.sort((a, b) => age.get(key(a.cat, a.w)) - age.get(key(b.cat, b.w)))];
+    deck[c] = [...shuffle(own[c]), ...fresh, ...old.sort((a, b) => age.get(key(a.cat, a.w)) - age.get(key(b.cat, b.w)))];
   }
   return deck;
 }
