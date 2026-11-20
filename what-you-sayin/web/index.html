@@ -310,6 +310,10 @@ select.input { appearance: auto; }
 .list .dot { width: 8px; height: 8px; background: var(--yellow); flex: none; }
 .tag { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; padding: 3px 7px; white-space: nowrap; }
 .tag.got { background: var(--mint); color: var(--deep); }
+.skip-strip { display: flex; flex-direction: column; gap: 6px; }
+.skip-strip .lbl { text-align: center; font-size: 12px; color: var(--lilac); }
+.skip-strip .chips { display: flex; gap: 8px; overflow-x: auto; flex-wrap: nowrap; justify-content: safe center; padding-bottom: 2px; }
+.skip-strip .chip { flex: none; white-space: nowrap; background: var(--lilac); color: var(--deep); border-color: var(--lilac); font-weight: 700; }
 .tag.skip { background: var(--lilac); color: var(--deep); }
 .tag.bin { background: var(--plum); color: var(--cream); }
 .tag.miss { background: var(--dim2); color: var(--cream); }
@@ -1373,14 +1377,15 @@ function turnPlayHtml(t, { teamName, seconds, role, boundary, describerName, men
   if (role === "watcher") {
     return screen(head, `${card(wordHtml(cur.w))}${cap}<p class="card-note">You're watching. ${esc(watchNote || "Call it if they say the word or a rhyme.")}</p>`, extraFoot, true);
   }
-  return screen(head, `${card(wordHtml(cur.w))}${cap}`,
+  // Skipped cards sit under the card: one tap to go back to one
+  const strip = skipped.length ? `<div class="skip-strip"><span class="lbl">Skipped · tap to go back</span><div class="chips">${skipped.map(c => `<button class="chip" data-act="t-unskip" data-i="${c.i}">↩ ${esc(c.w)}</button>`).join("")}</div></div>` : "";
+  return screen(head, `${card(wordHtml(cur.w))}${cap}${strip}`,
     `<div class="controls">
        <button class="btn ghost" data-act="t-skip" aria-label="Skip, ${MAX_SKIPS - t.skips} left">Skip</button>
        <button class="btn mint" data-act="t-got">CORRECT</button>
      </div>
      <div class="minor">
        <button data-act="t-bin" title="A bad card. Never show it again">Bin card</button>
-       <button data-act="t-skipped" ${skipped.length ? "" : "disabled"}>Skipped (${skipped.length})</button>
        <button data-act="t-pause">Pause</button>
      </div>${extraFoot}`, true);
 }
