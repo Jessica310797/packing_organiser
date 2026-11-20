@@ -76,6 +76,13 @@ b { font-weight: 700; }
 .title .t2 { display: block; font-size: clamp(56px, min(21vw, 10vh), 96px); }
 .title.mid .t2 { font-size: clamp(38px, min(13vw, 6.4vh), 62px); }
 .title.one .t1 { font-size: clamp(34px, min(11vw, 5.4vh), 52px); }
+.title-img { margin: 0; display: flex; justify-content: center; }
+.title-img img { display: block; height: auto; max-width: 100%; object-fit: contain; }
+.title-img.logo img { width: 88%; max-height: 18vh; }
+.title-img.howto img { width: 95%; max-height: 7vh; }
+.title-img.level img { width: 80%; max-height: 17vh; }
+.title-img.side img { width: 76%; max-height: 17vh; }
+.title-img.gameover img { width: 70%; max-height: 17vh; }
 .mini-mark { font-family: var(--f-display); color: var(--yellow); font-size: 15px; line-height: .95; text-transform: uppercase; text-align: right; }
 
 /* Colour blocks */
@@ -929,11 +936,21 @@ const backBar = (label, act = "home", right = "") => `<div class="spread"><butto
 // Gulfs Display headings: a small line over a big line, or one line
 const title = (t1, t2) => `<h1 class="title"><span class="t1">${esc(t1)}</span><span class="t2">${esc(t2)}</span></h1>`;
 const titleOne = t => `<h1 class="title one"><span class="t1">${esc(t)}</span></h1>`;
+// The fixed headings, cut from the design so they're exactly Gulfs Display
+// (file names written out in full so the build bundles them)
+const TITLE_IMGS = {
+  logo: `<img src="img/title-logo.png" alt="What You Sayin">`,
+  howto: `<img src="img/title-howto.png" alt="How to play">`,
+  level: `<img src="img/title-level.png" alt="Pick your level">`,
+  side: `<img src="img/title-side.png" alt="Pick your side">`,
+  gameover: `<img src="img/title-gameover.png" alt="Game over">`,
+};
+const titleImg = k => `<h1 class="title-img ${k}">${TITLE_IMGS[k]}</h1>`;
 
 function renderWelcome() {
   return screen(
     "",
-    `${title("What you", "Sayin")}
+    `${titleImg("logo")}
      <div class="grow"></div>
      <div class="panel"><h3>Enter with caution</h3>
        <p class="small">Some cards are rude. Some are ruder. You pick how far it goes. Unhinged is 18+. Don't play it with your nan. Or do. We're not your mum.</p></div>`,
@@ -947,7 +964,7 @@ function renderHome() {
     : (ON.code && ON.G) ? `<button class="resume" data-act="resume-group"><span>Game ${esc(ON.code)}</span><b>Back in →</b></button>` : "";
   return screen(
     resume,
-    `${title("What you", "Sayin")}
+    `${titleImg("logo")}
      <div class="menu">
        <button class="menu-card full c-orange" data-act="new-game"><img class="pixel trophy" src="img/trophy.png" alt=""><span class="lg">Full Game</span><span class="sm">Charades meets Cards</span></button>
        <button class="menu-card quick c-green" data-act="quick"><img class="pixel knight" src="img/knight.png" alt=""><span class="lg">Quick Fire</span><span class="sm">60 seconds. Go.</span></button>
@@ -959,7 +976,7 @@ function renderHome() {
 
 function renderHowTo() {
   return screen(
-    titleOne("How to play"),
+    titleImg("howto"),
     `<div class="howto">
        <div class="box full">
          <h3>Full Game</h3>
@@ -1068,7 +1085,7 @@ function renderSetup() {
   if (S.step === 1) {
     const unhinged = st.boundary >= 2;
     return screen(
-      title("Pick your", "Level"),
+      titleImg("level"),
       `<div class="levels">
          <button class="level family" data-act="pick-level" data-val="0" aria-pressed="${!unhinged}">Family<br>friendly(ish)</button>
          <button class="level unhinged" data-act="pick-level" data-val="2" aria-pressed="${unhinged}" ${kid ? "disabled" : ""}>Unhinged<img class="pixel skull" src="img/skull.png" alt=""></button>
@@ -1091,7 +1108,7 @@ function renderSetup() {
   };
   const n = localPlayerCount(st.teams);
   return screen(
-    `<div class="spread"><button class="back" data-act="step-back">← Level</button></div>${title("Pick your", "Side")}`,
+    `<div class="spread"><button class="back" data-act="step-back">← Level</button></div>${titleImg("side")}`,
     `<div class="sides">${st.teams.slice(0, 2).map(side).join("")}</div>
      <p class="hint center">Bucket: ${n * CARDS_PER_PLAYER} cards, ${CARDS_PER_PLAYER} for each player.
        <button class="link" data-act="team-names">New team names</button>${IN_CLAUDE && CAP.db ? ` · <button class="link" data-act="host">Everyone's phones</button>` : ""}</p>`,
@@ -1338,7 +1355,7 @@ function resultsHtml(rows, log, kind, nameOfTeam, newHi = false) {
     ? `I got ${rows[0].score} in What You Sayin quick fire. Beat that.`
     : `What You Sayin: ${sorted.map(r => `${r.name} ${r.score}`).join(", ")}. ${sorted[0].score === sorted[1]?.score ? "A draw." : `${sorted[0].name} won.`} Rematch?`;
   return screen(
-    `${kind === "group" ? "" : `<div class="spread"><button class="back" data-act="home">← Home</button></div>`}${title("Game", "Over")}`,
+    `${kind === "group" ? "" : `<div class="spread"><button class="back" data-act="home">← Home</button></div>`}${titleImg("gameover")}`,
     `<p class="wins">${esc(headline)}</p>
      ${rows.length > 1 ? `<p class="teams-line">${sorted.map(r => `${esc(r.name)} ${pad(r.score, 3)}${r.rounds ? ` (${r.rounds.join("/")})` : ""}`).join(" · ")}</p>` : ""}
      <div class="board">
