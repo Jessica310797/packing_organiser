@@ -110,6 +110,15 @@ async function main() {
     console.log(`Loaded ${names.length} team names from team-names.xlsx${problems.length ? ` (skipped ${problems.length} rows)` : ""}`);
   }
 
+  // Fonts in web/fonts (Gulfs Display) are built into the page; any that aren't there yet are left for the fallback
+  const FONT_TYPES = { woff2: "font/woff2", woff: "font/woff", otf: "font/otf", ttf: "font/ttf" };
+  page = page.replace(/url\("(fonts\/[\w.-]+\.(woff2|woff|otf|ttf))"\)/g, (m, file, ext) => {
+    const full = path.join(root, "web", file);
+    if (!fs.existsSync(full)) return m;
+    console.log(`Built in font ${file}`);
+    return `url("data:${FONT_TYPES[ext]};base64,${fs.readFileSync(full).toString("base64")}")`;
+  });
+
   page = page.replace(/src="(img\/[\w.-]+\.png)"/g, (_, file) => {
     const data = fs.readFileSync(path.join(root, "web", file)).toString("base64");
     return `src="data:image/png;base64,${data}"`;

@@ -87,6 +87,14 @@ milder names filling any gaps. Edit it the same way as `cards.xlsx`, then
 run `npm run build-html`. Players can still type their own names, or tap
 New names to re-roll.
 
+## Fonts
+
+Headings use **Gulfs Display**, everything else **Courier New** (Courier
+Prime where a phone doesn't have Courier New). Gulfs Display isn't a free
+web font, so put its file in `web/fonts/` as `GulfsDisplay.otf` (or `.ttf` /
+`.woff2`) and run `npm run build-html`. Until then headings fall back to
+Rammetto One.
+
 ## Changing the game
 
 The game lives in `web/index.html` (plus the logo images in `web/img/`).
